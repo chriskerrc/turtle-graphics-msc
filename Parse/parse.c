@@ -57,12 +57,9 @@ bool Fwd(Program *p);
 bool Ins(Program *p);
 void test(void);
 
-
-//compile using all flags 
-//maybe it's not scanning in words from file correctly
 int main(void)
 {
-   //test();
+  
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
 
@@ -84,8 +81,11 @@ int main(void)
       printf("Not parsed OK\n");
       return 1;
    }
+   
    free(prog);
-   //close file 
+   fclose(fp);
+   test();
+
    
    return 1; //return 0 for parsed and 1 for not parsed
 }
@@ -199,7 +199,7 @@ void test(void)
    strcpy(prog->wds[0], "RIGHT");
    strcpy(prog->wds[1], "10");
    assert(Rgt(prog)==true);
-   
+
    //printf("str 0 %s\n", prog->wds[0]);
    //printf("str 1 %s\n", prog->wds[1]);
    strcpy(prog->wds[0], "RIGHT");
