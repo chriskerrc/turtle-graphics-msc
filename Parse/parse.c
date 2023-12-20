@@ -24,9 +24,7 @@
 
 */
 
-//start with NUM function and work backwards
- 
-//don't add one in forward, right or num function 
+// is it ok to use Neill's strsame
 
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +39,7 @@
           "Fatal Error %s occurred in %s, line %d\n", PHRASE, \
           __FILE__, __LINE__); \
           exit(EXIT_FAILURE); }
-#define FNAME "forward.ttl"
+#define MAXFILENAME 50
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -55,46 +53,52 @@ bool Num(Program *p);
 bool Rgt(Program *p);
 bool Fwd(Program *p);
 bool Ins(Program *p);
+bool Op(Program *p);
+bool get_arg_filename(int argc, char *argv[], char* filename);
 void test(void);
 
-int main(void)
+int main(int argc, char *argv[])
 {
-  
+   test();
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
+   char filename[MAXFILENAME]; 
+  
+   if(get_arg_filename(argc, argv, filename) != true){
+      fprintf(stderr, "Didn't get filename\n");
+      exit(EXIT_FAILURE);
+   }
 
-   FILE* fp = fopen(FNAME, "r");
+   FILE* fp = fopen(filename, "r");
    if(fp == NULL){
-       fprintf(stderr, "Cannot readfile %s ?\n", FNAME);
+       fprintf(stderr, "Cannot read file %s ?\n", filename);
        exit(EXIT_FAILURE);
    }
    
    while(fscanf(fp, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
-      //printf("%s\n", prog->wds[i]);      
+      printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
+   
+   
    if(Prog(prog)==true){
       printf("Parsed OK\n");
+      fclose(fp);
+      free(prog); 
       return 0;
    }
-   else{
-      printf("Not parsed OK\n");
-      return 1;
-   }
-   
-   free(prog);
-   fclose(fp);
-   test();
-
-   
-   return 1; //return 0 for parsed and 1 for not parsed
+     
+    printf("Not parsed OK\n");
+    fclose(fp);
+    free(prog); 
+    return 1;
 }
 
 bool Prog(Program *p)
 {
-   //printf("%i\n", p->cw);
+   printf("Prog word: %s\n", p->wds[p->cw]);
    if(!strsame(p->wds[p->cw], "START")){
-      //ERROR("No START statement ?");
+      ERROR("No START statement ?");
       return false;
    }
    p->cw = p->cw + 1;
@@ -119,7 +123,7 @@ bool Inslst(Program *p)
          return true;
       }
    }
-   //ERROR("Inslst failed");
+   ERROR("Inslst failed");
    return false;
 }
 
@@ -134,20 +138,20 @@ bool Ins(Program *p)
          return true;
       }
    }
-   //ERROR("Ins failed");
+   ERROR("Ins failed");
    return false;
 }
 
 bool Fwd(Program *p)
 {
-   //printf("%s\n", p->wds[p->cw]);
+   printf("%s\n", p->wds[p->cw]);
    if(strsame(p->wds[p->cw], "FORWARD")){
       p->cw = p->cw + 1;
       if(Num(p)==true){
          return true;
       }       
    }   
-   //ERROR("Fwd failed");
+   ERROR("Fwd failed");
    return false;
 }
 
@@ -159,7 +163,7 @@ bool Rgt(Program *p)
          return true;
       }       
    }   
-   //ERROR("Rgt failed");
+   ERROR("Rgt failed");
    return false;
 }
 
@@ -174,14 +178,34 @@ bool Num(Program *p)
    return false;
 }
 
+bool Op(Program *p)
+{   
+   char c;
+   if(sscanf(p->wds[p->cw], "%[+-/*]s", &c)==1){    
+      return true;
+   }
+   return false;
+}
+
+bool get_arg_filename(int argc, char *argv[], char* filename)
+{
+   if(argc == 2){
+      if(sscanf(argv[1], "%s", filename)==1){
+         return true;
+      }
+   }
+   return false;
+}
+
+
 void test(void)
 {
+//create a function string to words to set words up as expected in the buffer. this will make testing easier. e.g. you want to test case START END. Have function that sets all that up for you. etc. 
+
+//test non-recursive functions first 
+
    Program* prog = calloc(1, sizeof(Program));
    
-   //Prog
-   strcpy(prog->wds[0], "START");
-   assert(Prog(prog)==true);
-
    //Num
    strcpy(prog->wds[0], "10");
    assert(Num(prog)==true);
@@ -194,7 +218,31 @@ void test(void)
    
    strcpy(prog->wds[0], "d.13"); //not a double
    assert(Num(prog)==false);
+   
+   //Op 
+   strcpy(prog->wds[0], "+");
+   assert(Op(prog)==true);
 
+   strcpy(prog->wds[0], "-");
+   assert(Op(prog)==true);
+
+   strcpy(prog->wds[0], "/");
+   assert(Op(prog)==true);
+
+   strcpy(prog->wds[0], "*");
+   assert(Op(prog)==true);
+   
+   strcpy(prog->wds[0], "?"); //non-valid punct
+   assert(Op(prog)==false);
+   
+   strcpy(prog->wds[0], "a"); //letter
+   assert(Op(prog)==false);
+
+   strcpy(prog->wds[0], "1"); //number
+   assert(Op(prog)==false);
+
+//ensure pointer is in the right state for these other functions
+/*
    //Rgt
    strcpy(prog->wds[0], "RIGHT");
    strcpy(prog->wds[1], "10");
@@ -220,9 +268,14 @@ void test(void)
    //Fwd
   
    //add assert testing
+
+    //Prog
+   strcpy(prog->wds[0], "START");
+   printf("Here: %s\n", prog->wds[0]);
+   assert(Prog(prog)==true);
    
    //free
-
+*/
    free(prog);
 
 }
