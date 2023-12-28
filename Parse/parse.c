@@ -26,10 +26,13 @@
 
 // is it ok to use Neill's strsame
 
+// check I'm using tabs not spaces (VS Code)
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <assert.h>
 
 #define MAXNUMTOKENS 100
@@ -55,6 +58,9 @@ bool Fwd(Program *p);
 bool Ins(Program *p);
 bool Op(Program *p);
 bool get_arg_filename(int argc, char *argv[], char* filename);
+void clear_buff(Program *p);
+void str2buff(Program *p, char* tst);
+void rst_pt(Program *p);
 void test(void);
 
 int main(int argc, char *argv[])
@@ -76,7 +82,7 @@ int main(int argc, char *argv[])
    }
    
    while(fscanf(fp, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
-      printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
+      //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
    
@@ -96,9 +102,9 @@ int main(int argc, char *argv[])
 
 bool Prog(Program *p)
 {
-   printf("Prog word: %s\n", p->wds[p->cw]);
+   //printf("Prog word: %s\n", p->wds[p->cw]);
    if(!strsame(p->wds[p->cw], "START")){
-      ERROR("No START statement ?");
+      //ERROR("No START statement ?");
       return false;
    }
    p->cw = p->cw + 1;
@@ -123,7 +129,7 @@ bool Inslst(Program *p)
          return true;
       }
    }
-   ERROR("Inslst failed");
+   //ERROR("Inslst failed");
    return false;
 }
 
@@ -138,20 +144,20 @@ bool Ins(Program *p)
          return true;
       }
    }
-   ERROR("Ins failed");
+   //ERROR("Ins failed");
    return false;
 }
 
 bool Fwd(Program *p)
 {
-   printf("%s\n", p->wds[p->cw]);
+   //printf("%s\n", p->wds[p->cw]);
    if(strsame(p->wds[p->cw], "FORWARD")){
       p->cw = p->cw + 1;
       if(Num(p)==true){
          return true;
       }       
    }   
-   ERROR("Fwd failed");
+   //ERROR("Fwd failed");
    return false;
 }
 
@@ -163,7 +169,7 @@ bool Rgt(Program *p)
          return true;
       }       
    }   
-   ERROR("Rgt failed");
+   //ERROR("Rgt failed");
    return false;
 }
 
@@ -173,7 +179,7 @@ bool Num(Program *p)
    if(sscanf(p->wds[p->cw], "%lf", &d)==1){
       return true;
    }
-   printf("%lf", d);
+   //printf("%lf", d);
    //ERROR("Num failed");
    return false;
 }
@@ -197,6 +203,34 @@ bool get_arg_filename(int argc, char *argv[], char* filename)
    return false;
 }
 
+void clear_buff(Program *p)
+{
+   //zero out first 100 words of buffer 
+   for(int i = 0; i < MAXNUMTOKENS; i++){
+      strcpy(p->wds[i], "");
+   }
+}
+
+void rst_ptr(Program *p)
+{
+   p->cw = 0;
+}
+
+void str2buff(Program *p, char* tst)
+{
+   int i = 0; 
+   int c = 0;
+   while(sscanf(tst, "%s", p->wds[i])==1 && i<MAXNUMTOKENS){
+      c = 0; //reset c after each word 
+      //move index to start of next word 
+      while(isgraph(tst[c])){
+         c++;
+      }
+      c++; //increment once more to get past space
+      tst += c; //move to the start of the next word in string
+      i++;
+   }
+}
 
 void test(void)
 {
@@ -241,8 +275,40 @@ void test(void)
    strcpy(prog->wds[0], "1"); //number
    assert(Op(prog)==false);
 
-//ensure pointer is in the right state for these other functions
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 10 END"); 
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 17.99 END"); 
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START RIGHT 10 END"); //RIGHT
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD TEN END"); // TEN instead of 10
+   assert(Prog(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORARD 10 END"); //mispelled FORWARD
+   assert(Prog(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 10"); //no END statement
+   assert(Prog(prog)==false);
+
 /*
+
+//ensure pointer is in the right state for these other functions
+
    //Rgt
    strcpy(prog->wds[0], "RIGHT");
    strcpy(prog->wds[1], "10");
