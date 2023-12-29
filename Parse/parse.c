@@ -10,23 +10,11 @@
 
 //don't need to care about case 17.d etc. As long as it scans a number, it's fine
 
-/*
-
-<PROG>   ::= "START" <INSLST>
-
-<INSLST> ::= "END" | <INS> <INSLST>
-<INS>    ::= <FWD> | <RGT>
-
-<FWD>    ::= "FORWARD" <NUM>
-<RGT>    ::= "RIGHT" <NUM>
-
-<NUM>    ::= 10 or -17.99 etc.
-
-*/
-
 // is it ok to use Neill's strsame
 
 // check I'm using tabs not spaces (VS Code)
+
+// run sanitizer and valgrind on cut-down grammar
 
 #include <stdio.h>
 #include <string.h>
@@ -237,6 +225,8 @@ void test(void)
 //test non-recursive functions first 
 
    Program* prog = calloc(1, sizeof(Program));
+
+   //TERMINAL FUNCTIONS
    
    //Num
    strcpy(prog->wds[0], "10");
@@ -272,6 +262,10 @@ void test(void)
 
    strcpy(prog->wds[0], "1"); //number
    assert(Op(prog)==false);
+
+   //NON-TERMINAL FUNCTIONS
+
+   //Prog
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -349,10 +343,104 @@ void test(void)
 
    //Inslst
 
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "END"); // END
+   assert(Inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "EN"); // mispelled END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START"); // not END or Ins 
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD 10 END"); // correct Ins (Fwd) + END
+   assert(Inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT -35 END"); // correct Ins (Rgt) + END
+   assert(Inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT -35"); // correct Ins (Rgt) with no END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD 6"); // correct Ins (Fwd) with no END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FRWARD 6 END"); // mispelled FORWARD with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RGHT 7 END"); // mispelled RIGHT with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT d END"); // Rgt (not a double) with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT END"); // Rgt (missing double) with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD x END"); // Fwd (not a double) with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD END"); // Fwd (missing double) with END
+   assert(Inslst(prog)==false);
 
    //Ins 
 
-   //Add assert testing for helper functions (i.e. not grammar functions)
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD 10"); //valid FORWARD instruction
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT -17.99"); //valid RIGHT instruction
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FRWARD -17.99"); //mispelled FORWARD 
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD d.99"); //not a double
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGT -17.99"); //mispelled RIGHT 
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT d.99"); //not a double
+   assert(Ins(prog)==false);
+
+   //Add assert testing for helper functions (i.e. not Grammar functions)
 
    //free
 
