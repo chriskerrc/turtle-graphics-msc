@@ -115,7 +115,6 @@ bool Prog(Program *p)
    
 }
 
-
 bool Inslst(Program *p)
 {
    //if word is "END", return true and don't increment p
@@ -132,7 +131,6 @@ bool Inslst(Program *p)
    //ERROR("Inslst failed");
    return false;
 }
-
 
 bool Ins(Program *p)
 {
@@ -305,43 +303,59 @@ void test(void)
    str2buff(prog, "START FORWARD 10"); //no END statement
    assert(Prog(prog)==false);
 
-/*
-
-//ensure pointer is in the right state for these other functions
-
    //Rgt
-   strcpy(prog->wds[0], "RIGHT");
-   strcpy(prog->wds[1], "10");
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT 10");
    assert(Rgt(prog)==true);
 
-   //printf("str 0 %s\n", prog->wds[0]);
-   //printf("str 1 %s\n", prog->wds[1]);
-   strcpy(prog->wds[0], "RIGHT");
-   strcpy(prog->wds[1], "-17.99");
-   
-   //printf("str 0 %s\n", prog->wds[0]);
-   //printf("str 1 %s\n", prog->wds[1]);
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT -17.99");
    assert(Rgt(prog)==true);
 
-   strcpy(prog->wds[0], "RIGT"); //mispelled RIGHT
-   strcpy(prog->wds[1], "-17.99");
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGT -17.99"); //mispelled RIGHT 
    assert(Rgt(prog)==false);
 
-   strcpy(prog->wds[0], "RIGHT");
-   strcpy(prog->wds[1], "d.99"); //not a double
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT d.99"); //not a double
    assert(Rgt(prog)==false);
 
    //Fwd
-  
-   //add assert testing
 
-    //Prog
-   strcpy(prog->wds[0], "START");
-   printf("Here: %s\n", prog->wds[0]);
-   assert(Prog(prog)==true);
-   
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD 10");
+   assert(Fwd(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD -17.99");
+   assert(Fwd(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FRWARD -17.99"); //mispelled FORWARD 
+   assert(Fwd(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD d.99"); //not a double
+   assert(Fwd(prog)==false);
+
+   //Inslst
+
+
+   //Ins 
+
+   //Add assert testing for helper functions (i.e. not grammar functions)
+
    //free
-*/
+
    free(prog);
 
 }
