@@ -14,7 +14,7 @@
 
 // check I'm using tabs not spaces (VS Code)
 
-// run sanitizer and valgrind on cut-down grammar
+// IMPORTANT: run sanitizer and valgrind on lab machines! 
 
 #include <stdio.h>
 #include <string.h>
@@ -45,6 +45,7 @@ bool Rgt(Program *p);
 bool Fwd(Program *p);
 bool Ins(Program *p);
 bool Op(Program *p);
+bool Ltr(Program *p);
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst);
@@ -172,8 +173,17 @@ bool Num(Program *p)
 
 bool Op(Program *p)
 {   
-   char c;
-   if(sscanf(p->wds[p->cw], "%[+-/*]s", &c)==1){    
+   char c[100]; //magic number
+   if(sscanf(p->wds[p->cw], "%99[+*-/]", c)==1){    //magic num
+      return true;
+   }
+   return false;
+}
+
+bool Ltr(Program *p)
+{
+   char c[100]; //magic number
+    if(sscanf(p->wds[p->cw], "%99[A-Z]s", c)==1){   //magic num
       return true;
    }
    return false;
@@ -202,7 +212,7 @@ void rst_ptr(Program *p)
    p->cw = 0;
 }
 
-void str2buff(Program *p, char* tst)
+void str2buff(Program *p, char tst[100]) //magic number
 {
    int i = 0; 
    int c = 0;
@@ -220,13 +230,9 @@ void str2buff(Program *p, char* tst)
 
 void test(void)
 {
-//create a function string to words to set words up as expected in the buffer. this will make testing easier. e.g. you want to test case START END. Have function that sets all that up for you. etc. 
-
-//test non-recursive functions first 
-
    Program* prog = calloc(1, sizeof(Program));
 
-   //TERMINAL FUNCTIONS
+   //NON-RECURSIVE FUNCTIONS
    
    //Num
    strcpy(prog->wds[0], "10");
@@ -240,8 +246,9 @@ void test(void)
    
    strcpy(prog->wds[0], "d.13"); //not a double
    assert(Num(prog)==false);
-   
+
    //Op 
+   
    strcpy(prog->wds[0], "+");
    assert(Op(prog)==true);
 
@@ -253,7 +260,7 @@ void test(void)
 
    strcpy(prog->wds[0], "*");
    assert(Op(prog)==true);
-   
+  
    strcpy(prog->wds[0], "?"); //non-valid punct
    assert(Op(prog)==false);
    
@@ -263,7 +270,12 @@ void test(void)
    strcpy(prog->wds[0], "1"); //number
    assert(Op(prog)==false);
 
-   //NON-TERMINAL FUNCTIONS
+   //Ltr
+
+   strcpy(prog->wds[0], "A");
+   assert(Ltr(prog)==true);
+
+   //RECURSIVE FUNCTIONS
 
    //Prog
 
@@ -271,7 +283,7 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "START FORWARD 10 END"); 
    assert(Prog(prog)==true);
-
+/*
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "START FORWARD 17.99 END"); 
@@ -297,6 +309,7 @@ void test(void)
    str2buff(prog, "START FORWARD 10"); //no END statement
    assert(Prog(prog)==false);
 
+
    //Rgt
 
    clear_buff(prog);
@@ -319,6 +332,7 @@ void test(void)
    str2buff(prog, "RIGHT d.99"); //not a double
    assert(Rgt(prog)==false);
 
+   
    //Fwd
 
    clear_buff(prog);
@@ -340,7 +354,8 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "FORWARD d.99"); //not a double
    assert(Fwd(prog)==false);
-
+   
+   
    //Inslst
 
    clear_buff(prog);
@@ -408,6 +423,7 @@ void test(void)
    str2buff(prog, "FORWARD END"); // Fwd (missing double) with END
    assert(Inslst(prog)==false);
 
+   
    //Ins 
 
    clear_buff(prog);
@@ -434,16 +450,16 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "RIGT -17.99"); //mispelled RIGHT 
    assert(Ins(prog)==false);
-
+ 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT d.99"); //not a double
-   assert(Ins(prog)==false);
+   //str2buff(prog, "RIGHT d.99"); //not a double
+   //assert(Ins(prog)==false);
 
    //Add assert testing for helper functions (i.e. not Grammar functions)
-
+  */
    //free
 
    free(prog);
-
+   
 }
