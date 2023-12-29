@@ -25,6 +25,8 @@
 
 #define MAXNUMTOKENS 100
 #define MAXTOKENSIZE 20
+#define TSTSTRLEN 100
+#define CHARBUFFLEN 100
 #define strsame(A,B) (strcmp(A, B)==0) //change this
 #define ERROR(PHRASE) { fprintf(stderr, \
           "Fatal Error %s occurred in %s, line %d\n", PHRASE, \
@@ -48,7 +50,7 @@ bool Op(Program *p);
 bool Ltr(Program *p);
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
-void str2buff(Program *p, char* tst);
+void str2buff(Program *p, char* tst, int numwords);
 void rst_pt(Program *p);
 void test(void);
 
@@ -173,8 +175,8 @@ bool Num(Program *p)
 
 bool Op(Program *p)
 {   
-   char c[100]; //magic number
-   if(sscanf(p->wds[p->cw], "%99[+*-/]", c)==1){    //magic num
+   char c[CHARBUFFLEN];
+   if(sscanf(p->wds[p->cw], "%[+*-/]", c)==1){    //magic num
       return true;
    }
    return false;
@@ -182,8 +184,8 @@ bool Op(Program *p)
 
 bool Ltr(Program *p)
 {
-   char c[100]; //magic number
-    if(sscanf(p->wds[p->cw], "%99[A-Z]s", c)==1){   //magic num
+   char c[CHARBUFFLEN];
+    if(sscanf(p->wds[p->cw], "%[A-Z]s", c)==1){   //magic num
       return true;
    }
    return false;
@@ -212,19 +214,17 @@ void rst_ptr(Program *p)
    p->cw = 0;
 }
 
-void str2buff(Program *p, char tst[100]) //magic number
+void str2buff(Program *p, char tst[TSTSTRLEN], int numwords) 
 {
-   int i = 0; 
-   int c = 0;
-   while(sscanf(tst, "%s", p->wds[i])==1 && i<MAXNUMTOKENS){
-      c = 0; //reset c after each word 
+   int word_index = 0; 
+   int string_index = 0; 
+   while(sscanf(tst + string_index, "%s", p->wds[word_index])==1 && word_index<numwords-1){ //why -1? this doesn't make sense to me
       //move index to start of next word 
-      while(isgraph(tst[c])){
-         c++;
+      while(isgraph(tst[string_index])){
+         string_index++;
       }
-      c++; //increment once more to get past space
-      tst += c; //move to the start of the next word in string
-      i++;
+      string_index++; //increment once more to get past space
+      word_index++;
    }
 }
 
@@ -281,183 +281,179 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "START FORWARD 10 END"); 
-   assert(Prog(prog)==true);
-/*
-   clear_buff(prog);
-   rst_ptr(prog);
-   str2buff(prog, "START FORWARD 17.99 END"); 
+   str2buff(prog, "START FORWARD 10 END", 4); 
    assert(Prog(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "START RIGHT 10 END"); //RIGHT
+   str2buff(prog, "START FORWARD 17.99 END", 4); 
    assert(Prog(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "START FORWARD TEN END"); // TEN instead of 10
+   str2buff(prog, "START RIGHT 10 END", 4); //RIGHT
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD TEN END", 4); // TEN instead of 10
    assert(Prog(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "START FORARD 10 END"); //mispelled FORWARD
+   str2buff(prog, "START FORARD 10 END", 4); //mispelled FORWARD
    assert(Prog(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "START FORWARD 10"); //no END statement
+   str2buff(prog, "START FORWARD 10", 3); //no END statement
    assert(Prog(prog)==false);
-
 
    //Rgt
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT 10");
+   str2buff(prog, "RIGHT 10", 2);
    assert(Rgt(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT -17.99");
+   str2buff(prog, "RIGHT -17.99", 2);
    assert(Rgt(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGT -17.99"); //mispelled RIGHT 
+   str2buff(prog, "RIGT -17.99", 2); //mispelled RIGHT 
    assert(Rgt(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT d.99"); //not a double
+   str2buff(prog, "RIGHT d.99", 2); //not a double
    assert(Rgt(prog)==false);
 
-   
    //Fwd
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD 10");
+   str2buff(prog, "FORWARD 10", 2);
    assert(Fwd(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD -17.99");
+   str2buff(prog, "FORWARD -17.99", 2);
    assert(Fwd(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FRWARD -17.99"); //mispelled FORWARD 
+   str2buff(prog, "FRWARD -17.99", 2); //mispelled FORWARD 
    assert(Fwd(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD d.99"); //not a double
+   str2buff(prog, "FORWARD d.99", 2); //not a double
    assert(Fwd(prog)==false);
-   
    
    //Inslst
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "END"); // END
+   str2buff(prog, "END", 1); // END
    assert(Inslst(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "EN"); // mispelled END
+   str2buff(prog, "EN", 1); // mispelled END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "START"); // not END or Ins 
+   str2buff(prog, "START", 1); // not END or Ins 
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD 10 END"); // correct Ins (Fwd) + END
+   str2buff(prog, "FORWARD 10 END", 3); // correct Ins (Fwd) + END
    assert(Inslst(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT -35 END"); // correct Ins (Rgt) + END
+   str2buff(prog, "RIGHT -35 END", 3); // correct Ins (Rgt) + END
    assert(Inslst(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT -35"); // correct Ins (Rgt) with no END
+   str2buff(prog, "RIGHT -35", 2); // correct Ins (Rgt) with no END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD 6"); // correct Ins (Fwd) with no END
+   str2buff(prog, "FORWARD 6", 2); // correct Ins (Fwd) with no END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FRWARD 6 END"); // mispelled FORWARD with END
+   str2buff(prog, "FRWARD 6 END", 3); // mispelled FORWARD with END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RGHT 7 END"); // mispelled RIGHT with END
+   str2buff(prog, "RGHT 7 END", 3); // mispelled RIGHT with END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT d END"); // Rgt (not a double) with END
+   str2buff(prog, "RIGHT d END", 3); // Rgt (not a double) with END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT END"); // Rgt (missing double) with END
+   str2buff(prog, "RIGHT END", 2); // Rgt (missing double) with END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD x END"); // Fwd (not a double) with END
+   str2buff(prog, "FORWARD x END", 3); // Fwd (not a double) with END
    assert(Inslst(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD END"); // Fwd (missing double) with END
+   str2buff(prog, "FORWARD END", 2); // Fwd (missing double) with END
    assert(Inslst(prog)==false);
 
-   
    //Ins 
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD 10"); //valid FORWARD instruction
+   str2buff(prog, "FORWARD 10", 2); //valid FORWARD instruction
    assert(Ins(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT -17.99"); //valid RIGHT instruction
+   str2buff(prog, "RIGHT -17.99", 2); //valid RIGHT instruction
    assert(Ins(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FRWARD -17.99"); //mispelled FORWARD 
+   str2buff(prog, "FRWARD -17.99", 2); //mispelled FORWARD 
    assert(Ins(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD d.99"); //not a double
+   str2buff(prog, "FORWARD d.99", 2); //not a double
    assert(Ins(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGT -17.99"); //mispelled RIGHT 
+   str2buff(prog, "RIGT -17.99", 2); //mispelled RIGHT 
    assert(Ins(prog)==false);
  
    clear_buff(prog);
    rst_ptr(prog);
-   //str2buff(prog, "RIGHT d.99"); //not a double
-   //assert(Ins(prog)==false);
+   str2buff(prog, "RIGHT d.99", 2); //not a double
+   assert(Ins(prog)==false);
 
    //Add assert testing for helper functions (i.e. not Grammar functions)
-  */
+
    //free
 
    free(prog);
