@@ -14,6 +14,8 @@
 
 // check I'm using tabs not spaces (VS Code)
 
+// consider substituting "p->wds[p->cw]" with something more readable
+
 // IMPORTANT: run sanitizer and valgrind on lab machines! 
 
 #include <stdio.h>
@@ -76,7 +78,6 @@ int main(int argc, char *argv[])
       //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
-   
    
    if(Prog(prog)==true){
       printf("Parsed OK\n");
@@ -185,7 +186,7 @@ bool Op(Program *p)
 bool Ltr(Program *p)
 {
    char c[CHARBUFFLEN];
-    if(sscanf(p->wds[p->cw], "%[A-Z]s", c)==1){   //magic num
+    if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){  
       return true;
    }
    return false;
@@ -271,9 +272,39 @@ void test(void)
    assert(Op(prog)==false);
 
    //Ltr
-
+   
    strcpy(prog->wds[0], "A");
    assert(Ltr(prog)==true);
+
+   strcpy(prog->wds[0], "M");
+   assert(Ltr(prog)==true);
+
+   strcpy(prog->wds[0], "Z");
+   assert(Ltr(prog)==true);
+
+   strcpy(prog->wds[0], "a"); //lowercase
+   assert(Ltr(prog)==false);
+
+   strcpy(prog->wds[0], "1"); //number
+   assert(Ltr(prog)==false);
+
+   strcpy(prog->wds[0], "!"); //punct 
+   assert(Ltr(prog)==false);
+   
+   strcpy(prog->wds[0], "AA"); //double capital letter 
+   assert(Ltr(prog)==false);
+
+   strcpy(prog->wds[0], "A!"); //cap letter then punct
+   assert(Ltr(prog)==false);
+
+   strcpy(prog->wds[0], "Ab"); //cap letter then lowercase
+   assert(Ltr(prog)==false);
+
+   strcpy(prog->wds[0], "A1"); //cap letter then number
+   assert(Ltr(prog)==false);
+
+   strcpy(prog->wds[0], "1A"); //num then cap
+   assert(Ltr(prog)==false);
 
    //RECURSIVE FUNCTIONS
 
