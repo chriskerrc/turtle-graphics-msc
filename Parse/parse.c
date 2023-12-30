@@ -54,6 +54,7 @@ bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
 void rst_pt(Program *p);
+bool Word(Program *p);
 void test(void);
 
 int main(int argc, char *argv[])
@@ -192,6 +193,17 @@ bool Ltr(Program *p)
    return false;
 }
 
+bool Word(Program *p)
+{
+   //this function assumes that any valid string is a word
+   //might want to rewrite so it only accepts e.g. "RED", "BLUE", "HELLO!" or "178"
+   char c[CHARBUFFLEN];
+    if(sscanf(p->wds[p->cw], "%s", c)==1){  
+      return true;
+   }
+   return false;
+}
+
 bool get_arg_filename(int argc, char *argv[], char* filename)
 {
    if(argc == 2){
@@ -305,6 +317,26 @@ void test(void)
 
    strcpy(prog->wds[0], "1A"); //num then cap
    assert(Ltr(prog)==false);
+
+   //Word
+
+   // I need to decide what counts as a valid word.
+   // Currently it's anything but a null string 
+   
+   strcpy(prog->wds[0], "RED"); 
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "BLUE"); 
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "HELLO!"); 
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "178"); 
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], ""); 
+   assert(Word(prog)==false);
 
    //RECURSIVE FUNCTIONS
 
