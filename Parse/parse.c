@@ -15,6 +15,7 @@
 // check I'm using tabs not spaces (VS Code)
 
 // consider substituting "p->wds[p->cw]" with something more readable
+// relatedly, watch out for long lines i.e. && separated expressions in functions
 
 // IMPORTANT: run sanitizer and valgrind on lab machines! 
 
@@ -55,6 +56,8 @@ void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
 void rst_pt(Program *p);
 bool Word(Program *p);
+bool Var(Program *p);
+bool Varnum(Program *p);
 void test(void);
 
 int main(int argc, char *argv[])
@@ -187,7 +190,12 @@ bool Op(Program *p)
 bool Ltr(Program *p)
 {
    char c[CHARBUFFLEN];
-    if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){  
+   //letter on its own
+   if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){ 
+      return true;
+   }
+   //letter in a variable
+   if(sscanf(p->wds[p->cw], "$%[A-Z]", c)==1 && p->wds[p->cw][2]== '\0'){ //2 = magic num 
       return true;
    }
    return false;
@@ -201,6 +209,34 @@ bool Word(Program *p)
     if(sscanf(p->wds[p->cw], "%s", c)==1){  
       return true;
    }
+   return false;
+}
+
+bool Var(Program *p)
+{
+   char c[CHARBUFFLEN];
+   if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '$'){
+      if(Ltr(p)==true){
+         return true;
+      }
+      else{
+         return false;
+      }
+   }
+   return false;
+}
+
+bool Varnum(Program *p)
+{
+   if(Var(p)==true){
+      return true;
+   }
+   else{
+      if(Num(p)==true){
+         return true;
+      }
+   }
+   //ERROR("Varnum failed");
    return false;
 }
 
@@ -318,11 +354,20 @@ void test(void)
    strcpy(prog->wds[0], "1A"); //num then cap
    assert(Ltr(prog)==false);
 
+   strcpy(prog->wds[0], "$A"); //valid var
+   assert(Ltr(prog)==true);
+
+   strcpy(prog->wds[0], "$M"); //valid var
+   assert(Ltr(prog)==true);
+
+   strcpy(prog->wds[0], "$Z"); //valid var
+   assert(Ltr(prog)==true);
+
    //Word
 
    // I need to decide what counts as a valid word.
    // Currently it's anything but a null string 
-   
+
    strcpy(prog->wds[0], "RED"); 
    assert(Word(prog)==true);
 
@@ -337,6 +382,8 @@ void test(void)
 
    strcpy(prog->wds[0], ""); 
    assert(Word(prog)==false);
+
+   //account for case e.g. "RED YELLOW": function should fail for this (I think?)
 
    //RECURSIVE FUNCTIONS
 
@@ -514,6 +561,67 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "RIGHT d.99", 2); //not a double
    assert(Ins(prog)==false);
+
+   //Var 
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); //first char is $
+   assert(Var(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$M", 1); //first char is $
+   assert(Var(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$Z", 1); //first char is $
+   assert(Var(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$!", 1); //first char is $, 2nd is punct
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "!A", 1); //first char is not $
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$$", 1); //first & 2nd chars are $
+   assert(Var(prog)==false);
+   //found bug where this was valid. I had "$%[$A-Z]" instead of "$%[A-Z]"
+
+   //Varnum 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); //valid Var
+   assert(Varnum(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$a", 1); //invalid Var
+   assert(Varnum(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "-17.99", 1); //valid Num
+   assert(Varnum(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10", 1); //valid Num
+   assert(Varnum(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "A", 1); //invalid Num
+   assert(Varnum(prog)==false);
+
+   // HELPER FUNCTIONS 
 
    //Add assert testing for helper functions (i.e. not Grammar functions)
 
