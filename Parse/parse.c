@@ -4,8 +4,6 @@
 // do research on how to test 
 // e.g. black box testing: can I break your program, not knowing how it works 
 
-//forward.ttl works for cut down grammar 
-
 //take out error calling. either return 0 or 1
 
 //don't need to care about case 17.d etc. As long as it scans a number, it's fine
@@ -51,14 +49,16 @@ bool Fwd(Program *p);
 bool Ins(Program *p);
 bool Op(Program *p);
 bool Ltr(Program *p);
-bool get_arg_filename(int argc, char *argv[], char* filename);
-void clear_buff(Program *p);
-void str2buff(Program *p, char* tst, int numwords);
-void rst_pt(Program *p);
 bool Word(Program *p);
 bool Var(Program *p);
 bool Varnum(Program *p);
 bool Item(Program *p);
+bool Col(Program *p);
+
+bool get_arg_filename(int argc, char *argv[], char* filename);
+void clear_buff(Program *p);
+void str2buff(Program *p, char* tst, int numwords);
+void rst_pt(Program *p);
 void test(void);
 
 int main(int argc, char *argv[])
@@ -252,6 +252,24 @@ bool Item(Program *p)
       }
    }
    //ERROR("Item failed");
+   return false;
+}
+
+bool Col(Program *p)
+{
+   //printf("Col: %s\n", p->wds[p->cw]);
+   if(strsame(p->wds[p->cw], "COLOUR")){
+      p->cw = p->cw + 1;
+      if(Var(p)==true){
+         return true;
+      }
+      else{
+         if(Word(p)==true){
+            return true;
+         }
+      }       
+   }   
+   //ERROR("Col failed");
    return false;
 }
 
@@ -710,6 +728,53 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "", 1); //invalid Word: null string
    assert(Item(prog)==false);
+
+   //Col 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR $A", 2); //valid Col instruction
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR $M", 2); //valid Col instruction: Var
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR $Z", 2); //valid Col instruction: Var
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOR $Z", 2); //mispelled COLOUR :(
+   assert(Col(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR RED", 2); //valid Col instruction: Word
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR BLUE", 2); //valid Col instruction: Word
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR HELLO!", 2); //valid Col instruction: Word
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR 178", 2); //valid Col instruction: Word
+   assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR ", 1); //missing instruction after COLOUR
+   assert(Col(prog)==false);
 
    // HELPER FUNCTIONS 
 
