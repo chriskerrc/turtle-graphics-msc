@@ -148,7 +148,7 @@ bool Fwd(Program *p)
    //printf("%s\n", p->wds[p->cw]);
    if(strsame(p->wds[p->cw], "FORWARD")){
       p->cw = p->cw + 1;
-      if(Num(p)==true){
+      if(Varnum(p)==true){
          return true;
       }       
    }   
@@ -160,7 +160,7 @@ bool Rgt(Program *p)
 {
    if(strsame(p->wds[p->cw], "RIGHT")){
       p->cw = p->cw + 1;
-      if(Num(p)==true){
+      if(Varnum(p)==true){
          return true;
       }       
    }   
@@ -440,13 +440,33 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT 10", 2);
+   str2buff(prog, "RIGHT 10", 2);  //valid Num
    assert(Rgt(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RIGHT -17.99", 2);
+   str2buff(prog, "RIGHT -17.99", 2); //valid Num
    assert(Rgt(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT $B", 2); //valid Var
+   assert(Rgt(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT $Z", 2); //valid Var
+   assert(Rgt(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT $a", 2); //invalid Var: lowercase
+   assert(Rgt(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT $$", 2); //invalid Var: two $
+   assert(Rgt(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -462,13 +482,33 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD 10", 2);
+   str2buff(prog, "FORWARD 10", 2); //valid Num
    assert(Fwd(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "FORWARD -17.99", 2);
+   str2buff(prog, "FORWARD -17.99", 2); //valid Num
    assert(Fwd(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD $B", 2); //valid Var
+   assert(Fwd(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD $Z", 2); //valid Var
+   assert(Fwd(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD $a", 2); //invalid Var: lowercase
+   assert(Fwd(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD $$", 2); //invalid Var: two $
+   assert(Fwd(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
