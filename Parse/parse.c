@@ -54,6 +54,7 @@ bool Var(Program *p);
 bool Varnum(Program *p);
 bool Item(Program *p);
 bool Col(Program *p);
+bool Pfix(Program *p);
 
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
@@ -121,7 +122,6 @@ bool Inslst(Program *p)
    if(Ins(p)==true){
       p->cw = p->cw + 1;
       if(Inslst(p)==true){
-         Inslst(p);
          return true;
       }
    }
@@ -272,6 +272,33 @@ bool Col(Program *p)
    //ERROR("Col failed");
    return false;
 }
+
+bool Pfix(Program *p)
+{
+   //if word is ")", return true and don't increment p
+   if(strsame(p->wds[p->cw], ")")){
+      return true;
+   }
+   
+   if(Op(p)==true){
+      p->cw = p->cw + 1;
+      if(Pfix(p)==true){
+         return true;
+      }
+   }
+   else{
+      if(Varnum(p)==true){
+         p->cw = p->cw + 1;
+         if(Pfix(p)==true){
+            return true;
+         }
+      }
+   }
+   //ERROR("Pfix failed");
+   return false;
+}
+
+//HELPER FUNCTIONS
 
 bool get_arg_filename(int argc, char *argv[], char* filename)
 {
@@ -775,6 +802,83 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "COLOUR ", 1); //missing instruction after COLOUR
    assert(Col(prog)==false);
+
+   //Pfix 
+
+   //Note that the grammar seems to allow all sorts of strange instructions and does not even
+   // state that the operator must come after the varnum (i.e. does not ensure postfix)
+   // For now I'm assuming these weird instructions will parse OK but not be interpreted 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, ")", 1); // ) only 
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "", 1); //null string  
+   assert(Pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 0.25 - )", 4); //interpretable instruction
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "0.25 $A - )", 4); //swapped var and num
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 0.25 ! )", 4); //incorrect operator
+   assert(Pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$a 0.25 / )", 4); //incorrect var
+   assert(Pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 0.25 -", 3); //missing )
+   assert(Pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A RED - )", 4); //word instead of varnum
+   assert(Pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 0.25 - ]", 4); //wrong type of closing bracket
+   assert(Pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "* $A )", 3); //operator then var [not interpretable]
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "+ - / * )", 5); //lots of operators followed by ) [not interpretable]
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "+ )", 2); //operator then ) [not interpretable]
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 )", 2); //number then ) [not interpretable]
+   assert(Pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$Q )", 2); //var then ) [not interpretable]
+   assert(Pfix(prog)==true);
+
 
    // HELPER FUNCTIONS 
 
