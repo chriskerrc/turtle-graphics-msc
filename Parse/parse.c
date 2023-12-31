@@ -58,6 +58,7 @@ void rst_pt(Program *p);
 bool Word(Program *p);
 bool Var(Program *p);
 bool Varnum(Program *p);
+bool Item(Program *p);
 void test(void);
 
 int main(int argc, char *argv[])
@@ -240,6 +241,20 @@ bool Varnum(Program *p)
    return false;
 }
 
+bool Item(Program *p)
+{
+   if(Varnum(p)==true){
+      return true;
+   }
+   else{
+      if(Word(p)==true){
+         return true;
+      }
+   }
+   //ERROR("Item failed");
+   return false;
+}
+
 bool get_arg_filename(int argc, char *argv[], char* filename)
 {
    if(argc == 2){
@@ -280,6 +295,8 @@ void str2buff(Program *p, char tst[TSTSTRLEN], int numwords)
 void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
+
+// To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and slows things down
 
    //NON-RECURSIVE FUNCTIONS
    
@@ -620,6 +637,39 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "A", 1); //invalid Num
    assert(Varnum(prog)==false);
+
+   //Item 
+   
+   //Note: because Word is defined very broadly, the Item function will be true for any string
+   // For example, an incorrectly formatted variable will be accepted as a "Word"
+   // Also, numbers are valid words and valid varnums. So when will the call to Varnum fail?
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); //valid Varnum: Var
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10", 1); //valid Varnum: Num
+   assert(Item(prog)==true);
+
+   //How to test for invalid Varnum...
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RED", 1); //valid Word
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "GREEN", 1); //valid Word
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "", 1); //invalid Word: null string
+   assert(Item(prog)==false);
 
    // HELPER FUNCTIONS 
 
