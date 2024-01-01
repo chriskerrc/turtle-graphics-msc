@@ -62,6 +62,7 @@ bool Pfix(Program *p);
 bool Items(Program *p);
 bool Set(Program *p);
 
+bool brace_then_pfix(Program *p);
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
@@ -324,20 +325,28 @@ bool Items(Program *p)
 }
 
 bool Set(Program *p)
-{ //too deeply nested? split out into helper function?
+{ 
    if(strsame(p->wds[p->cw], "SET")){
       inc_curr_word(p);
       if(Ltr(p)==true){
         inc_curr_word(p);
-         if(strsame(p->wds[p->cw], "(")){
-            inc_curr_word(p);
-            if(Pfix(p)==true){
-               return true;
-            }
-         }
+        if(brace_then_pfix(p)==true){
+           return true;
+        }
       }
    }
    return false; 
+}
+
+bool brace_then_pfix(Program *p)
+{
+   if(strsame(p->wds[p->cw], "(")){
+      inc_curr_word(p);
+      if(Pfix(p)==true){
+         return true;
+      }
+   }
+   return false;
 }
 
 //HELPER FUNCTIONS
@@ -1022,6 +1031,22 @@ void test(void)
    str2buff(prog, "SET 9 ( $A 0.25 - ", 7); // missing Pfix )
    assert(Set(prog)==false);
 
+   //brace_then_pfix
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "( $A 0.25 - )", 5); // ( then Pfix
+   assert(brace_then_pfix(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 0.25 - )", 4); // no ( then Pfix
+   assert(brace_then_pfix(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "( $A 0.25 - ", 4); // ( then Pfix with missing )
+   assert(brace_then_pfix(prog)==false);
 
    // HELPER FUNCTIONS 
 
