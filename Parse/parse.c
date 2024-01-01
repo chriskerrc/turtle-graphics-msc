@@ -55,6 +55,7 @@ bool Varnum(Program *p);
 bool Item(Program *p);
 bool Col(Program *p);
 bool Pfix(Program *p);
+bool Items(Program *p);
 
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
@@ -296,6 +297,21 @@ bool Pfix(Program *p)
    }
    //ERROR("Pfix failed");
    return false;
+}
+
+bool Items(Program *p)
+{
+   //if word is "}", return true and don't increment p
+   if(strsame(p->wds[p->cw], "}")){
+      return true;
+   }
+   if(Item(p)==true){
+      p->cw = p->cw + 1;
+      if(Items(p)==true){
+         return true;
+      }
+   }
+   return false; 
 }
 
 //HELPER FUNCTIONS
@@ -878,6 +894,66 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "$Q )", 2); //var then ) [not interpretable]
    assert(Pfix(prog)==true);
+
+   //Items
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "}", 1); // } only
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, ")", 1); // } wrong closing bracket only
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A }", 2); // var then } 
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 }", 2); // num then } 
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RED }", 2); // word then } 
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); // var no } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "-17.99", 1); // num no } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RED", 1); // word no } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 17 }", 3); // multiple varnum then }
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 $M }", 3); // multiple varnum then }
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 $M RED BLACK }", 5); // multiple varnum and word then }
+   assert(Items(prog)==true);
+
+   //how do I test invalid varnum? Anything invalid here will be a valid word
+
 
 
    // HELPER FUNCTIONS 
