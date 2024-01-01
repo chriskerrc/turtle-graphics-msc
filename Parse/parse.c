@@ -56,11 +56,13 @@ bool Item(Program *p);
 bool Col(Program *p);
 bool Pfix(Program *p);
 bool Items(Program *p);
+bool Set(Program *p);
 
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
 void rst_pt(Program *p);
+void inc_curr_word(Program *p); 
 void test(void);
 
 int main(int argc, char *argv[])
@@ -106,7 +108,7 @@ bool Prog(Program *p)
       //ERROR("No START statement ?");
       return false;
    }
-   p->cw = p->cw + 1;
+   inc_curr_word(p);
    if (Inslst(p)) {
       return true;   
    }
@@ -121,7 +123,7 @@ bool Inslst(Program *p)
       return true;
    }
    if(Ins(p)==true){
-      p->cw = p->cw + 1;
+      inc_curr_word(p);
       if(Inslst(p)==true){
          return true;
       }
@@ -147,8 +149,8 @@ bool Ins(Program *p)
 bool Fwd(Program *p)
 {
    //printf("%s\n", p->wds[p->cw]);
-   if(strsame(p->wds[p->cw], "FORWARD")){
-      p->cw = p->cw + 1;
+   if(strsame(p->wds[p->cw], "FORWARD")){ //replace this with a current_word_match function to hide p->wds[p->cw] 
+      inc_curr_word(p);
       if(Varnum(p)==true){
          return true;
       }       
@@ -160,7 +162,7 @@ bool Fwd(Program *p)
 bool Rgt(Program *p)
 {
    if(strsame(p->wds[p->cw], "RIGHT")){
-      p->cw = p->cw + 1;
+      inc_curr_word(p);
       if(Varnum(p)==true){
          return true;
       }       
@@ -258,9 +260,12 @@ bool Item(Program *p)
 
 bool Col(Program *p)
 {
+   //Question: should this function enforce that word is valid colour?
+   //Currently, nothing in the parser enforces what is valid colour, but this is part of the grammar...
+   
    //printf("Col: %s\n", p->wds[p->cw]);
    if(strsame(p->wds[p->cw], "COLOUR")){
-      p->cw = p->cw + 1;
+      inc_curr_word(p);
       if(Var(p)==true){
          return true;
       }
@@ -282,14 +287,14 @@ bool Pfix(Program *p)
    }
    
    if(Op(p)==true){
-      p->cw = p->cw + 1;
+      inc_curr_word(p);
       if(Pfix(p)==true){
          return true;
       }
    }
    else{
       if(Varnum(p)==true){
-         p->cw = p->cw + 1;
+         inc_curr_word(p);
          if(Pfix(p)==true){
             return true;
          }
@@ -306,9 +311,26 @@ bool Items(Program *p)
       return true;
    }
    if(Item(p)==true){
-      p->cw = p->cw + 1;
+      inc_curr_word(p);
       if(Items(p)==true){
          return true;
+      }
+   }
+   return false; 
+}
+
+bool Set(Program *p)
+{ //too deeply nested? split out into helper function?
+   if(strsame(p->wds[p->cw], "SET")){
+      inc_curr_word(p);
+      if(Ltr(p)==true){
+        inc_curr_word(p);
+         if(strsame(p->wds[p->cw], "(")){
+            inc_curr_word(p);
+            if(Pfix(p)==true){
+               return true;
+            }
+         }
       }
    }
    return false; 
@@ -337,6 +359,11 @@ void clear_buff(Program *p)
 void rst_ptr(Program *p)
 {
    p->cw = 0;
+}
+
+void inc_curr_word(Program *p)
+{
+   p->cw += 1;
 }
 
 void str2buff(Program *p, char tst[TSTSTRLEN], int numwords) 
