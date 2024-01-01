@@ -17,6 +17,10 @@
 
 // IMPORTANT: run sanitizer and valgrind on lab machines! 
 
+// replace strsame pointer stuff with readable function that hides syntax bool curr_word_is_match
+
+// what happens if there are no spaces between "words" in the ttl file. should parse fail?
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -149,7 +153,7 @@ bool Ins(Program *p)
 bool Fwd(Program *p)
 {
    //printf("%s\n", p->wds[p->cw]);
-   if(strsame(p->wds[p->cw], "FORWARD")){ //replace this with a current_word_match function to hide p->wds[p->cw] 
+   if(strsame(p->wds[p->cw], "FORWARD")){ //replace this with a current_word_match function to hide p->wds[p->cw] e.g. bool match_curr_word(Program *p, char*)
       inc_curr_word(p);
       if(Varnum(p)==true){
          return true;
@@ -981,6 +985,42 @@ void test(void)
 
    //how do I test invalid varnum? Anything invalid here will be a valid word
 
+   //Set 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET A ( $A 0.25 - )", 7); // valid expression with sensible Pfix 
+   assert(Set(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET A ( $A 0.25 - + / 99 $M )", 11); // valid expression with weird but valid Pfix 
+   assert(Set(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET Z ( $A 0.25 - )", 7); // valid expression with sensible Pfix (different ltr)
+   assert(Set(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET 9 ( $A 0.25 - )", 7); // num instead of ltr 
+   assert(Set(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "ST Z ( $A 0.25 - )", 7); // mispelled SET
+   assert(Set(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET 9 [ $A 0.25 - )", 7); // wrong opening bracket
+   assert(Set(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET 9 ( $A 0.25 - ", 7); // missing Pfix )
+   assert(Set(prog)==false);
 
 
    // HELPER FUNCTIONS 
