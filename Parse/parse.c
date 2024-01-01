@@ -61,8 +61,9 @@ bool Col(Program *p);
 bool Pfix(Program *p);
 bool Items(Program *p);
 bool Set(Program *p);
-
 bool brace_then_pfix(Program *p);
+bool Lst(Program *p);
+
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
@@ -349,6 +350,17 @@ bool brace_then_pfix(Program *p)
    return false;
 }
 
+bool Lst(Program *p)
+{
+   if(strsame(p->wds[p->cw], "{")){
+      inc_curr_word(p);
+      if(Items(p)==true){
+         return true;
+      }
+   }
+   return false; 
+}
+
 //HELPER FUNCTIONS
 
 bool get_arg_filename(int argc, char *argv[], char* filename)
@@ -397,7 +409,7 @@ void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
 
-// To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and slows things down
+   // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
 
    //NON-RECURSIVE FUNCTIONS
    
@@ -721,6 +733,7 @@ void test(void)
    assert(Ins(prog)==false);
 
    //Var 
+
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A", 1); //first char is $
@@ -1048,11 +1061,64 @@ void test(void)
    str2buff(prog, "( $A 0.25 - ", 4); // ( then Pfix with missing )
    assert(brace_then_pfix(prog)==false);
 
+   //Lst 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ $A }", 3); // valid Lst: one var 
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ $A $M }", 4); // valid Lst: two vars 
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ $A -17.99 }", 4); // valid Lst: one var one num
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ RED }", 3); // valid Lst: one word
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ BLACK RED }", 4); // valid Lst: two words
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ BLACK $Q }", 4); // valid Lst: one word one var
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ 10 GREEN }", 4); // valid Lst: one num one word
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A }", 2); // invalid: missing { 
+   assert(Lst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "( $A }", 3); // invalid: wrong opening bracket
+   assert(Lst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ 10 GREEN", 3); // invalid Items: missing }
+   assert(Lst(prog)==false);
+
+
    // HELPER FUNCTIONS 
 
    //Add assert testing for helper functions (i.e. not Grammar functions)
 
-   //free
+   //FREE
 
    free(prog);
    
