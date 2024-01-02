@@ -211,10 +211,13 @@ bool Ltr(Program *p)
 
 bool Word(Program *p)
 {
-   //this function assumes that any valid string is a word
-   //might want to rewrite so it only accepts e.g. "RED", "BLUE", "HELLO!" or "178"
+   //should this function only accept capital letters e.g. "RED" not "red"? 
+
    char c[CHARBUFFLEN];
-    if(sscanf(p->wds[p->cw], "%s", c)==1){  
+    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][1]== '\"'){
+      return false; //to ensure input "\"\"" returns false
+    }
+    if(sscanf(p->wds[p->cw], "\"%s\"", c)==1){  
       return true;
    }
    return false;
@@ -530,27 +533,45 @@ void test(void)
 
    //Word
 
-   // I need to decide what counts as a valid word.
-   // Currently it's anything but a null string 
-
-   // words must have " " around them! 
-
-   strcpy(prog->wds[0], "RED"); 
+   strcpy(prog->wds[0], "\"RED\""); //colour with ""
    assert(Word(prog)==true);
 
-   strcpy(prog->wds[0], "BLUE"); 
-   assert(Word(prog)==true);
-
-   strcpy(prog->wds[0], "HELLO!"); 
-   assert(Word(prog)==true);
-
-   strcpy(prog->wds[0], "178"); 
-   assert(Word(prog)==true);
-
-   strcpy(prog->wds[0], ""); 
+   strcpy(prog->wds[0], "RED\""); //colour missing first "
    assert(Word(prog)==false);
 
+   strcpy(prog->wds[0], "\"RED"); //colour missing second "
+   //assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "RED"); //colour without ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"BLUE\""); 
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "\"HELLO!\""); //other word (not interpretable)
+   assert(Word(prog)==true);
+
+    strcpy(prog->wds[0], "HELLO!"); //other word without ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"178\""); //word that's a number
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "178"); //word that's a number without ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], ""); //null string, no ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"\""); //null string with ""
+   assert(Word(prog)==false);
+   // this is a bug I found through assert testing: previously input "\"\"" returned true
+
+   //found significant bug where "\"RED" evaluates to true i.e. missing second "
+
    //account for case e.g. "RED YELLOW": function should fail for this (I think?)
+
+   //what about case "\"RED YELLOW\"" or "\"RED \"YELLOW\"" etc: can use these as examples of bugs found through testing
 
    //RECURSIVE FUNCTIONS
 
@@ -830,10 +851,6 @@ void test(void)
    assert(Varnum(prog)==false);
 
    //Item 
-   
-   //Note: because Word is defined very broadly, the Item function will be true for any string
-   // For example, an incorrectly formatted variable will be accepted as a "Word"
-   // Also, numbers are valid words and valid varnums. So when will the call to Varnum fail?
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -845,17 +862,27 @@ void test(void)
    str2buff(prog, "10", 1); //valid Varnum: Num
    assert(Item(prog)==true);
 
-   //How to test for invalid Varnum...
+   //how do I know the above valid num isn't a word that's missing its "" i.e. "10" is a valid word
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RED", 1); //valid Word
+   str2buff(prog, "\"RED\"", 1); //valid Word
    assert(Item(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "GREEN", 1); //valid Word
+   str2buff(prog, "\"GREEN\"", 1); //valid Word
    assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "\"178\"", 1); //valid Word (number)
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "GREEN", 1); //invalid Word (no "")
+   assert(Item(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -886,23 +913,38 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "COLOUR RED", 2); //valid Col instruction: Word
+   str2buff(prog, "COLOUR \"RED\"", 2); //valid Col instruction: Word
    assert(Col(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "COLOUR BLUE", 2); //valid Col instruction: Word
+   str2buff(prog, "COLOUR RED", 2); //invalid Col instruction: Word missing ""
+   assert(Col(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR \"BLUE\"", 2); //valid Col instruction: Word
    assert(Col(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "COLOUR HELLO!", 2); //valid Col instruction: Word
+   str2buff(prog, "COLOUR \"HELLO!\"", 2); //valid Col instruction: Word
    assert(Col(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "COLOUR 178", 2); //valid Col instruction: Word
+   str2buff(prog, "COLOUR HELLO!", 2); //invalid Col instruction: Word missing ""
+   assert(Col(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR \"178\"", 2); //valid Col instruction: Word
    assert(Col(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR 178", 2); //invalid Col instruction: Word missing ""
+   assert(Col(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -1009,8 +1051,13 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RED }", 2); // word then } 
+   str2buff(prog, "\"RED\" }", 2); // word then } 
    assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RED }", 2); // word no "" then } 
+   assert(Items(prog)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -1024,7 +1071,7 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "RED", 1); // word no } 
+   str2buff(prog, "\"RED\"", 1); // word no } 
    assert(Items(prog)==false);
 
    clear_buff(prog);
@@ -1039,10 +1086,13 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "10 $M RED BLACK }", 5); // multiple varnum and word then }
+   str2buff(prog, "10 $M \"RED\" \"BLACK\" }", 5); // multiple varnum and word then }
    assert(Items(prog)==true);
 
-   //how do I test invalid varnum? Anything invalid here will be a valid word
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 $M RED \"BLACK\" }", 5); // multiple varnum and word then } (one word missing "")
+   assert(Items(prog)==false);
 
    //Set 
 
@@ -1117,23 +1167,27 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "{ RED }", 3); // valid Lst: one word
+   str2buff(prog, "{ \"RED\" }", 3); // valid Lst: one word
    assert(Lst(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "{ BLACK RED }", 4); // valid Lst: two words
+   str2buff(prog, "{ RED }", 3); // invalid Lst: word missing ""
+   assert(Lst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ \"BLACK\" \"RED\" }", 4); // valid Lst: two words
    assert(Lst(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "{ BLACK $Q }", 4); // valid Lst: one word one var
+   str2buff(prog, "{ \"BLACK\" $Q }", 4); // valid Lst: one word one var
    assert(Lst(prog)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "{ 10 GREEN }", 4); // valid Lst: one num one word
-   assert(Lst(prog)==true);
+   str2buff(prog, "{ 10 \"GREEN\" }", 4); // valid Lst: one num one word
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -1147,7 +1201,7 @@ void test(void)
 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "{ 10 GREEN", 3); // invalid Items: missing }
+   str2buff(prog, "{ 10 \"GREEN\"", 3); // invalid Items: missing }
    assert(Lst(prog)==false);
 
    //Loop
