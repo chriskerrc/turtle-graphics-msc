@@ -8,16 +8,12 @@
 
 //don't need to care about case 17.d etc. As long as it scans a number, it's fine
 
-// is it ok to use Neill's strsame
-
 // check I'm using tabs not spaces (VS Code)
 
 // consider substituting "p->wds[p->cw]" with something more readable
 // relatedly, watch out for long lines i.e. && separated expressions in functions
 
 // IMPORTANT: run sanitizer and valgrind on lab machines! 
-
-// replace strsame pointer stuff with readable function that hides syntax bool curr_word_is_match
 
 // what happens if there are no spaces between "words" in the ttl file. should parse fail?
 
@@ -32,7 +28,6 @@
 #define MAXTOKENSIZE 20
 #define TSTSTRLEN 100
 #define CHARBUFFLEN 100
-#define strsame(A,B) (strcmp(A, B)==0) //change this
 #define ERROR(PHRASE) { fprintf(stderr, \
           "Fatal Error %s occurred in %s, line %d\n", PHRASE, \
           __FILE__, __LINE__); \
@@ -68,7 +63,8 @@ bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
 void rst_pt(Program *p);
-void inc_curr_word(Program *p); 
+void next_word(Program *p); 
+bool word_matches(Program *p, char match[MAXTOKENSIZE]);
 void test(void);
 
 int main(int argc, char *argv[])
@@ -94,7 +90,7 @@ int main(int argc, char *argv[])
       i++;
    }
    
-   if(Prog(prog)==true){
+   if(Prog(prog)){
       printf("Parsed OK\n");
       fclose(fp);
       free(prog); 
@@ -110,11 +106,11 @@ int main(int argc, char *argv[])
 bool Prog(Program *p)
 {
    //printf("Prog word: %s\n", p->wds[p->cw]);
-   if(!strsame(p->wds[p->cw], "START")){
+   if(!word_matches(p, "START")){
       //ERROR("No START statement ?");
       return false;
    }
-   inc_curr_word(p);
+   next_word(p);
    if (Inslst(p)) {
       return true;   
    }
@@ -125,12 +121,12 @@ bool Prog(Program *p)
 bool Inslst(Program *p)
 {
    //if word is "END", return true and don't increment p
-   if(strsame(p->wds[p->cw], "END")){
+   if(word_matches(p, "END")){
       return true;
    }
-   if(Ins(p)==true){
-      inc_curr_word(p);
-      if(Inslst(p)==true){
+   if(Ins(p)){
+      next_word(p);
+      if(Inslst(p)){
          return true;
       }
    }
@@ -140,11 +136,11 @@ bool Inslst(Program *p)
 
 bool Ins(Program *p)
 {
-   if(Fwd(p)==true){
+   if(Fwd(p)){
       return true;
    }
    else{
-      if(Rgt(p)==true){
+      if(Rgt(p)){
          return true;
       }
    }
@@ -155,9 +151,9 @@ bool Ins(Program *p)
 bool Fwd(Program *p)
 {
    //printf("%s\n", p->wds[p->cw]);
-   if(strsame(p->wds[p->cw], "FORWARD")){ //replace this with a current_word_match function to hide p->wds[p->cw] e.g. bool match_curr_word(Program *p, char*)
-      inc_curr_word(p);
-      if(Varnum(p)==true){
+   if(word_matches(p, "FORWARD")){ 
+      next_word(p);
+      if(Varnum(p)){
          return true;
       }       
    }   
@@ -167,9 +163,9 @@ bool Fwd(Program *p)
 
 bool Rgt(Program *p)
 {
-   if(strsame(p->wds[p->cw], "RIGHT")){
-      inc_curr_word(p);
-      if(Varnum(p)==true){
+   if(word_matches(p, "RIGHT")){
+      next_word(p);
+      if(Varnum(p)){
          return true;
       }       
    }   
@@ -180,7 +176,7 @@ bool Rgt(Program *p)
 bool Num(Program *p)
 {
    double d;
-   if(sscanf(p->wds[p->cw], "%lf", &d)==1){
+   if(sscanf(p->wds[p->cw], "%lf", &d)==1){  //for every sscanf like this, replace p->wds[p->cw] with function that hides this ugly syntax
       return true;
    }
    //printf("%lf", d);
@@ -226,7 +222,7 @@ bool Var(Program *p)
 {
    char c[CHARBUFFLEN];
    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '$'){
-      if(Ltr(p)==true){
+      if(Ltr(p)){
          return true;
       }
       else{
@@ -238,11 +234,11 @@ bool Var(Program *p)
 
 bool Varnum(Program *p)
 {
-   if(Var(p)==true){
+   if(Var(p)){
       return true;
    }
    else{
-      if(Num(p)==true){
+      if(Num(p)){
          return true;
       }
    }
@@ -252,11 +248,11 @@ bool Varnum(Program *p)
 
 bool Item(Program *p)
 {
-   if(Varnum(p)==true){
+   if(Varnum(p)){
       return true;
    }
    else{
-      if(Word(p)==true){
+      if(Word(p)){
          return true;
       }
    }
@@ -270,13 +266,13 @@ bool Col(Program *p)
    //Currently, nothing in the parser enforces what is valid colour, but this is part of the grammar...
    
    //printf("Col: %s\n", p->wds[p->cw]);
-   if(strsame(p->wds[p->cw], "COLOUR")){
-      inc_curr_word(p);
-      if(Var(p)==true){
+   if(word_matches(p, "COLOUR")){
+      next_word(p);
+      if(Var(p)){
          return true;
       }
       else{
-         if(Word(p)==true){
+         if(Word(p)){
             return true;
          }
       }       
@@ -288,20 +284,20 @@ bool Col(Program *p)
 bool Pfix(Program *p)
 {
    //if word is ")", return true and don't increment p
-   if(strsame(p->wds[p->cw], ")")){
+   if(word_matches(p, ")")){
       return true;
    }
    
-   if(Op(p)==true){
-      inc_curr_word(p);
-      if(Pfix(p)==true){
+   if(Op(p)){
+      next_word(p);
+      if(Pfix(p)){
          return true;
       }
    }
    else{
-      if(Varnum(p)==true){
-         inc_curr_word(p);
-         if(Pfix(p)==true){
+      if(Varnum(p)){
+         next_word(p);
+         if(Pfix(p)){
             return true;
          }
       }
@@ -313,12 +309,12 @@ bool Pfix(Program *p)
 bool Items(Program *p)
 {
    //if word is "}", return true and don't increment p
-   if(strsame(p->wds[p->cw], "}")){
+   if(word_matches(p, "}")){
       return true;
    }
-   if(Item(p)==true){
-      inc_curr_word(p);
-      if(Items(p)==true){
+   if(Item(p)){
+      next_word(p);
+      if(Items(p)){
          return true;
       }
    }
@@ -327,11 +323,11 @@ bool Items(Program *p)
 
 bool Set(Program *p)
 { 
-   if(strsame(p->wds[p->cw], "SET")){
-      inc_curr_word(p);
-      if(Ltr(p)==true){
-        inc_curr_word(p);
-        if(brace_then_pfix(p)==true){
+   if(word_matches(p, "SET")){
+      next_word(p);
+      if(Ltr(p)){
+        next_word(p);
+        if(brace_then_pfix(p)){
            return true;
         }
       }
@@ -341,9 +337,9 @@ bool Set(Program *p)
 
 bool brace_then_pfix(Program *p)
 {
-   if(strsame(p->wds[p->cw], "(")){
-      inc_curr_word(p);
-      if(Pfix(p)==true){
+   if(word_matches(p, "(")){
+      next_word(p);
+      if(Pfix(p)){
          return true;
       }
    }
@@ -352,9 +348,9 @@ bool brace_then_pfix(Program *p)
 
 bool Lst(Program *p)
 {
-   if(strsame(p->wds[p->cw], "{")){
-      inc_curr_word(p);
-      if(Items(p)==true){
+   if(word_matches(p, "{")){
+      next_word(p);
+      if(Items(p)){
          return true;
       }
    }
@@ -386,7 +382,7 @@ void rst_ptr(Program *p)
    p->cw = 0;
 }
 
-void inc_curr_word(Program *p)
+void next_word(Program *p)
 {
    p->cw += 1;
 }
@@ -403,6 +399,14 @@ void str2buff(Program *p, char tst[TSTSTRLEN], int numwords)
       string_index++; //increment once more to get past space
       word_index++;
    }
+}
+
+bool word_matches(Program *p, char match[MAXTOKENSIZE])
+{
+   if(strcmp(p->wds[p->cw], match)==0){
+      return true;
+   }
+   return false; 
 }
 
 void test(void)
@@ -1115,6 +1119,21 @@ void test(void)
 
 
    // HELPER FUNCTIONS 
+
+   //word_matches 
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "GREEN", 1); 
+   assert(word_matches(prog, "GREEN")==true);
+
+   str2buff(prog, "}", 1); 
+   assert(word_matches(prog, "}")==true);
+
+   str2buff(prog, "}", 1); 
+   assert(word_matches(prog, ")")==false); //different bracket
+
+   str2buff(prog, "BLUE", 1); 
+   assert(word_matches(prog, "RED")==false); //different word
 
    //Add assert testing for helper functions (i.e. not Grammar functions)
 
