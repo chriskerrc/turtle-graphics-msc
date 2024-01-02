@@ -215,7 +215,7 @@ bool Word(Program *p) // long lines
    int len = strlen(p->wds[p->cw]);
    //printf("len: %i\n", len);
    char c[CHARBUFFLEN];
-    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][1]== '\"'){
+    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][1]== '\"'){
       return false; //to ensure input "\"\"" returns false
     }
     if(len > 1){ //to avoid going out of bounds on null "" string
