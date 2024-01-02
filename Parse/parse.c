@@ -58,6 +58,8 @@ bool Items(Program *p);
 bool Set(Program *p);
 bool brace_then_pfix(Program *p);
 bool Lst(Program *p);
+//bool Loop(Program *p);
+//bool over_lst_inslst(Program *p);
 
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
@@ -356,6 +358,35 @@ bool Lst(Program *p)
    }
    return false; 
 }
+/*
+bool Loop(Program *p)
+{
+   if(word_matches(p, "LOOP")){
+      next_word(p);
+      if(Ltr(p)){
+        next_word(p);
+        if(over_lst_inslst(p)){
+           return true;
+        }
+      }
+   }
+   return false; 
+}
+
+bool over_lst_inslst(Program *p)
+{
+   if(word_matches(p, "OVER")){
+      next_word(p);
+      if(Lst(p)){
+         next_word(p);
+         if(Inslst(p)){
+            return true;
+         }
+      }
+   }
+   return false;
+}
+*/
 
 //HELPER FUNCTIONS
 
@@ -501,6 +532,8 @@ void test(void)
 
    // I need to decide what counts as a valid word.
    // Currently it's anything but a null string 
+
+   // words must have " " around them! 
 
    strcpy(prog->wds[0], "RED"); 
    assert(Word(prog)==true);
@@ -1116,6 +1149,67 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "{ 10 GREEN", 3); // invalid Items: missing }
    assert(Lst(prog)==false);
+
+   //Loop
+
+   /*
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ 10 GREEN", 3); // invalid Items: missing }
+   Loop(prog);
+  
+
+   //over_lst_inslst
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { 20 } END", 5); // num then END
+   assert(over_lst_inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVR { 20 } END", 5); // mispelled OVER
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER 20 } END", 4); // missing {
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { 20 END", 4); // missing }
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { 20 }", 4); // missing END (no Inslst)
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { $M } END", 5); // var then END
+   assert(over_lst_inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { "RED" } END", 5); // word then END
+   assert(over_lst_inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { 20 $M "RED" } END", 7); // num then var then word then END
+   assert(over_lst_inslst(prog)==true);
+
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "OVER { "RED" "GREEN" "YELLOW" "BLUE" } COLOUR $C FORWARD $D RIGHT 90 END", 14); // long expression
+   assert(over_lst_inslst(prog)==true);
+
+ */
+
+
 
 
    // HELPER FUNCTIONS 
