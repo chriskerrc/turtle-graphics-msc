@@ -209,7 +209,7 @@ bool Ltr(Program *p)
    return false;
 }
 
-bool Word(Program *p) //this function is quite hacky. can it be simplified?
+bool Word(Program *p) // long lines
 {
    //should this function only accept capital letters e.g. "RED" not "red"? 
    int len = strlen(p->wds[p->cw]);
@@ -220,12 +220,9 @@ bool Word(Program *p) //this function is quite hacky. can it be simplified?
     }
     if(len > 1){ //to avoid going out of bounds on null "" string
       //printf("end of string: %c\n", p->wds[p->cw][len-1]);
-       if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][len-1] != '\"'){
-          return false;
+       if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][len-1] == '\"'){
+          return true;
        }
-    }
-    if(sscanf(p->wds[p->cw], "\"%s", c)==1){  // "\"%s\"" wasn't checking the 2nd " for some reason
-      return true;
     }
    return false;
 }
@@ -1212,6 +1209,8 @@ void test(void)
    assert(Lst(prog)==false);
 
    //Loop
+
+//note: need to apply escape chars here 
 
    /*
    clear_buff(prog);
