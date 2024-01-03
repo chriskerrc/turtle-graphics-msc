@@ -1,10 +1,7 @@
-// ask Neill: is it OK to borrow from 0 & 1 code https://github.com/csnwc/Notes/blob/main/Code/ChapX/0and1s.c
-// yes, this is fine but this code doesn't conform to style guide, reads stuff in in a hacky way i.e. change it later
+// is the parser returning correctly i.e. 0 success for pass, 1 fail for fail?
 
 // do research on how to test 
 // e.g. black box testing: can I break your program, not knowing how it works 
-
-//take out error calling. either return 0 or 1
 
 //don't need to care about case 17.d etc. As long as it scans a number, it's fine
 
@@ -32,6 +29,7 @@
           "Fatal Error %s occurred in %s, line %d\n", PHRASE, \
           __FILE__, __LINE__); \
           exit(EXIT_FAILURE); }
+//take the above out if not used
 #define MAXFILENAME 50
 #define VAR_CALL 1
 #define NO_VAR_CALL 0
@@ -95,16 +93,16 @@ int main(int argc, char *argv[])
    }
    
    if(Prog(prog)){
-      printf("Parsed OK\n");
+      //printf("Parsed OK\n");
       fclose(fp);
       free(prog); 
-      return 0;
+      return EXIT_SUCCESS;
    }
      
-    printf("Not parsed OK\n");
+    //printf("Not parsed OK\n");
     fclose(fp);
     free(prog); 
-    return 1;
+    return EXIT_FAILURE;
 }
 
 bool Prog(Program *p)
