@@ -38,7 +38,7 @@
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
-   int cw; // Current Word
+   int cw; // Current Word <-rename to something readable
 };
 typedef struct prog Program;
 
@@ -843,6 +843,11 @@ void test(void)
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "M", 1); //letter, not var
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "S", 1); //letter, not var
    assert(Var(prog)==false);
 
    //Varnum 
