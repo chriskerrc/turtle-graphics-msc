@@ -143,10 +143,17 @@ bool Ins(Program *p)
    if(Fwd(p)){
       return true;
    }
-   else{
-      if(Rgt(p)){
-         return true;
-      }
+   else if(Rgt(p)){
+      return true; 
+   }
+   else if(Col(p)){
+      return true; 
+   }
+   else if(Loop(p)){
+      return true; 
+   }
+   else if(Set(p)){
+      return true; 
    }
    //ERROR("Ins failed");
    return false;
@@ -806,6 +813,131 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "RIGHT d.99", 2); //not a double
    assert(Ins(prog)==false);
+
+     clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR $A", 2); //valid Col instruction
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR $M", 2); //valid Col instruction: Var
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR $Z", 2); //valid Col instruction: Var
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOR $Z", 2); //mispelled COLOUR :(
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR \"RED\"", 2); //valid Col instruction: Word
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR RED", 2); //invalid Col instruction: Word missing ""
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR \"BLUE\"", 2); //valid Col instruction: Word
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "COLOUR \"HELLO!\"", 2); //valid Col instruction: Word
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET A ( $A 0.25 - )", 7); // valid expression with sensible Pfix 
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET A ( $A 0.25 - + / 99 $M )", 11); // valid expression with weird but valid Pfix 
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET Z ( $A 0.25 - )", 7); // valid expression with sensible Pfix (different ltr)
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET 9 ( $A 0.25 - )", 7); // num instead of ltr 
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "ST Z ( $A 0.25 - )", 7); // mispelled SET
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET 9 [ $A 0.25 - )", 7); // wrong opening bracket
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "SET 9 ( $A 0.25 - ", 7); // missing Pfix )
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP M OVER { \"GREEN\" } END", 7); // valid Loop
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP A OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } FORWARD $D RIGHT 90 END", 14); // valid Loop (long)
+   assert(Ins(prog)==true);
+  
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP U OVER { \"RED\" } END", 7); // valid Loop (one colour)
+   assert(Ins(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOP M OVER { \"GREEN\" } END", 7); // mispelled LOOP
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP 9 OVER { \"GREEN\" } END", 7); // num instead of Ltr
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP $W OVER { \"GREEN\" } END", 7); // var instead of Ltr
+   assert(Ins(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP $B OVR { 20 } END", 7); // mispelled OVER
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP $W OVER 20 } END", 6); // missing {
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP $Y OVER { 20 END", 6); // missing }
+   assert(over_lst_inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "LOOP $Q OVER { 20 }", 6); // missing END (no Inslst)
+   assert(over_lst_inslst(prog)==false);
 
    //Var 
 
