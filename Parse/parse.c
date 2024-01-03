@@ -33,6 +33,8 @@
           __FILE__, __LINE__); \
           exit(EXIT_FAILURE); }
 #define MAXFILENAME 50
+#define VAR_CALL 1
+#define NO_VAR_CALL 0
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -47,7 +49,7 @@ bool Rgt(Program *p);
 bool Fwd(Program *p);
 bool Ins(Program *p);
 bool Op(Program *p);
-bool Ltr(Program *p);
+bool Ltr(Program *p, int is_var_call);
 bool Word(Program *p);
 bool Var(Program *p);
 bool Varnum(Program *p);
@@ -195,20 +197,6 @@ bool Op(Program *p)
    return false;
 }
 
-bool Ltr(Program *p)
-{
-   char c[CHARBUFFLEN];
-   //letter on its own
-   if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){ 
-      return true;
-   }
-   //letter in a variable
-   if(sscanf(p->wds[p->cw], "$%[A-Z]", c)==1 && p->wds[p->cw][2]== '\0'){ //2 = magic num 
-      return true;
-   }
-   return false;
-}
-
 bool Word(Program *p) // long lines
 {
    //should this function only accept capital letters e.g. "RED" not "red"? 
@@ -225,11 +213,29 @@ bool Word(Program *p) // long lines
    return false;
 }
 
+bool Ltr(Program *p, int is_var_call)
+{
+   char c[CHARBUFFLEN];
+   //letter on its own
+   if(is_var_call == NO_VAR_CALL){
+      if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){ 
+      return true;
+      }
+   }
+   //letter in a variable
+   if(is_var_call == VAR_CALL){
+      if(sscanf(p->wds[p->cw], "$%[A-Z]", c)==1 && p->wds[p->cw][2]== '\0'){ //2 = magic num 
+         return true;
+      }
+   }
+   return false;
+}
+
 bool Var(Program *p)
 {
    char c[CHARBUFFLEN];
    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '$'){
-      if(Ltr(p)){
+      if(Ltr(p, VAR_CALL)){
          return true;
       }
       else{
@@ -332,7 +338,7 @@ bool Set(Program *p)
 { 
    if(word_matches(p, "SET")){
       next_word(p);
-      if(Ltr(p)){
+      if(Ltr(p, NO_VAR_CALL)){
         next_word(p);
         if(brace_then_pfix(p)){
            return true;
@@ -368,7 +374,7 @@ bool Loop(Program *p)
 {
    if(word_matches(p, "LOOP")){
       next_word(p);
-      if(Ltr(p)){
+      if(Ltr(p, NO_VAR_CALL)){
         next_word(p);
         if(over_lst_inslst(p)){
            return true;
@@ -492,46 +498,55 @@ void test(void)
    //Ltr
    
    strcpy(prog->wds[0], "A");
-   assert(Ltr(prog)==true);
+   assert(Ltr(prog, NO_VAR_CALL)==true);
 
    strcpy(prog->wds[0], "M");
-   assert(Ltr(prog)==true);
+   assert(Ltr(prog, NO_VAR_CALL)==true);
 
    strcpy(prog->wds[0], "Z");
-   assert(Ltr(prog)==true);
+   assert(Ltr(prog, NO_VAR_CALL)==true);
 
    strcpy(prog->wds[0], "a"); //lowercase
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    strcpy(prog->wds[0], "1"); //number
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    strcpy(prog->wds[0], "!"); //punct 
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
    
    strcpy(prog->wds[0], "AA"); //double capital letter 
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    strcpy(prog->wds[0], "A!"); //cap letter then punct
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    strcpy(prog->wds[0], "Ab"); //cap letter then lowercase
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    strcpy(prog->wds[0], "A1"); //cap letter then number
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    strcpy(prog->wds[0], "1A"); //num then cap
-   assert(Ltr(prog)==false);
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
-   strcpy(prog->wds[0], "$A"); //valid var
-   assert(Ltr(prog)==true);
+   strcpy(prog->wds[0], "$A"); //valid var: as if called from Var
+   assert(Ltr(prog, VAR_CALL)==true);
 
-   strcpy(prog->wds[0], "$M"); //valid var
-   assert(Ltr(prog)==true);
+   strcpy(prog->wds[0], "$A"); //valid var: as if not called from Var
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
-   strcpy(prog->wds[0], "$Z"); //valid var
-   assert(Ltr(prog)==true);
+   strcpy(prog->wds[0], "$M"); //valid var: as if called from Var
+   assert(Ltr(prog, VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "$M"); //valid var: as if not called from Var
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "$Z"); //valid var: as if called from Var
+   assert(Ltr(prog, VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "$Z"); //valid var: as if not called from Var
+   assert(Ltr(prog, NO_VAR_CALL)==false);
 
    //Word
 
@@ -553,7 +568,7 @@ void test(void)
    strcpy(prog->wds[0], "\"HELLO!\""); //other word (not interpretable)
    assert(Word(prog)==true);
 
-    strcpy(prog->wds[0], "HELLO!"); //other word without ""
+   strcpy(prog->wds[0], "HELLO!"); //other word without ""
    assert(Word(prog)==false);
 
    strcpy(prog->wds[0], "\"178\""); //word that's a number
@@ -824,6 +839,11 @@ void test(void)
    str2buff(prog, "$$", 1); //first & 2nd chars are $
    assert(Var(prog)==false);
    //found bug where this was valid. I had "$%[$A-Z]" instead of "$%[A-Z]"
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "M", 1); //letter, not var
+   assert(Var(prog)==false);
 
    //Varnum 
 
@@ -1236,7 +1256,7 @@ void test(void)
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "LOOP $W OVER { \"GREEN\" } END", 7); // var instead of Ltr
-   //assert(Loop(prog)==false);
+   assert(Loop(prog)==false);
 
    //found a bug where Ltr function thinks $W is a valid letter, because of the way I wrote it to be called recursively as part of Var
 
