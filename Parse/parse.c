@@ -1,16 +1,12 @@
-// is the parser returning correctly i.e. 0 success for pass, 1 fail for fail?
+// is the parser returning correctly? currently it returns 0 success for parsed, 1 fail for not parsed?
 
 // do research on how to test 
 // e.g. black box testing: can I break your program, not knowing how it works 
 
-//don't need to care about case 17.d etc. As long as it scans a number, it's fine
-
-// check I'm using tabs not spaces (VS Code)
-
 // consider substituting "p->wds[p->cw]" with something more readable
 // relatedly, watch out for long lines i.e. && separated expressions in functions
 
-// IMPORTANT: run sanitizer and valgrind on lab machines! 
+// 3 Jan: ran valgrind, sanitizer and all flags on lab machine. Also tried gcc as well as clang. All good
 
 // what happens if there are no spaces between "words" in the ttl file. should parse fail?
 
@@ -207,14 +203,14 @@ bool Word(Program *p) // long lines
    //should this function only accept capital letters e.g. "RED" not "red"? 
    int len = strlen(p->wds[p->cw]);
    char c[CHARBUFFLEN];
-    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][1]== '\"'){
+   if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][1]== '\"'){
       return false; //to ensure input "\"\"" returns false
-    }
-    if(len > 1){ //to avoid len-1 going out of bounds on null "" string
-       if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][len-1] == '\"'){
-          return true;
-       }
-    }
+   }
+   if(len > 1){ //to avoid len-1 going out of bounds on null "" string
+      if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][len-1] == '\"'){
+         return true;
+      }
+   }
    return false;
 }
 
@@ -344,10 +340,10 @@ bool Set(Program *p)
    if(word_matches(p, "SET")){
       next_word(p);
       if(Ltr(p, NO_VAR_CALL)){
-        next_word(p);
-        if(brace_then_pfix(p)){
-           return true;
-        }
+         next_word(p);
+         if(brace_then_pfix(p)){
+            return true;
+         }
       }
    }
    return false; 
@@ -380,10 +376,10 @@ bool Loop(Program *p)
    if(word_matches(p, "LOOP")){
       next_word(p);
       if(Ltr(p, NO_VAR_CALL)){
-        next_word(p);
-        if(over_lst_inslst(p)){
-           return true;
-        }
+         next_word(p);
+         if(over_lst_inslst(p)){
+            return true;
+         }
       }
    }
    return false; 
@@ -476,6 +472,8 @@ void test(void)
    
    strcpy(prog->wds[0], "d.13"); //not a double
    assert(Num(prog)==false);
+
+   //don't need to care about case 17.d etc. As long as it scans a number, it's fine
 
    //Op 
    
