@@ -1,21 +1,8 @@
-// is the parser returning correctly? currently it returns 0 success for parsed, 1 fail for not parsed?
+#include "interp.h"
 
-// do research on how to test 
-// e.g. black box testing: can I break your program, not knowing how it works 
-
-// consider substituting "p->wds[p->cw]" with something more readable
-// relatedly, watch out for long lines i.e. && separated expressions in functions
-
-// 3 Jan: ran valgrind, sanitizer and all flags on lab machine. Also tried gcc as well as clang. All good
-
-// what happens if there are no spaces between "words" in the ttl file. should parse fail?
-
-// read all Teams posts and ensure I've covered everything
-
-//check I've handled reading in .ttl files from TTLs directory correctly 
-
-#include "parse.h"
-
+//run sanitizer etc 
+//is extremely long line in assert test ok?
+//think about what happens in empty loop: Neill might test for this 
 
 int main(int argc, char *argv[])
 {
@@ -23,6 +10,7 @@ int main(int argc, char *argv[])
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
    char filename[MAXFILENAME]; 
+   init_turtle(prog); //added init so turtle for read in file is initialized 
   
    if(get_arg_filename(argc, argv, filename) != true){
       fprintf(stderr, "Didn't get filename\n");
@@ -106,11 +94,21 @@ bool Ins(Program *p)
 }
 
 bool Fwd(Program *p)
-{
+{   
+   double fwd_step = 0;
    //printf("%s\n", p->wds[p->cw]);
    if(word_matches(p, "FORWARD")){ 
       next_word(p);
       if(Varnum(p)){
+         if(Num(p)){
+            if(sscanf(p->wds[p->cw], "%lf", &fwd_step)== 1){
+               draw_forward(p, fwd_step);
+               //printf("calling draw forward\n");
+               return true;
+            }
+         }
+         //get var or num for interpreter
+         //call draw_forward with this num or var 
          return true;
       }       
    }   
@@ -267,7 +265,8 @@ bool Pfix(Program *p)
             return true;
          }
       }
-   }
+   } 
+
    //ERROR("Pfix failed");
    return false;
 }
@@ -351,6 +350,87 @@ bool over_lst_inslst(Program *p)
    return false;
 }
 
+//INTERPRETER FUNCTIONS 
+
+bool empty_grid(Program *p)
+{
+   int not_null = 0;
+   for(int row = 0; row < ROW_HEIGHT; row++){
+      for(int col = 0; col < COL_WIDTH; col++){
+         if(p->grid[row][col] != '\0'){
+            not_null++;
+         }
+      }
+   }
+   if(not_null > 0){
+      return false;
+   }
+   return true; 
+}
+
+void init_turtle(Program *p)
+{
+   if(empty_grid(p)==true){
+      p->grid[MID_ROW][MID_COL] = WHITE;
+      p->curr_y = MID_ROW;
+      p->curr_x = MID_COL;
+      p->curr_direction = 0; 
+   }
+}
+
+void print_grid(Program *p)
+{
+   for(int row = 0; row < ROW_HEIGHT; row++){
+      for(int col = 0; col < COL_WIDTH; col++){
+         if(isalpha(p->grid[row][col])){
+            printf("%c", p->grid[row][col]);
+         }
+         else{
+            printf(" "); //print a space
+         }
+      }
+      printf("\n");
+   }
+   printf("\n");
+}
+
+void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
+{
+   int str_index = 0; 
+   for(int row = 0; row < ROW_HEIGHT; row++){   
+      for(int col = 0; col < COL_WIDTH; col++){ 
+         if(isalpha(p->grid[row][col])){
+            str[str_index] = p->grid[(str_index-col)/COL_WIDTH][str_index - row * COL_WIDTH]; 
+            str_index++;
+         }
+         else{
+            str[str_index] = ' ';
+            str_index++;
+         }
+      }
+   }
+}
+
+void draw_forward(Program *p, double n)
+{
+   //get current location from Program struct 
+   int y_coord = round(p->curr_y);
+   int x_coord = round(p->curr_x);
+   int direction = p->curr_direction; //make this a double
+   
+   //if direction is 0, take away y coordinate each time
+   //for each n, add a char in front of current position
+   //decrement counter each time
+   //MAKE THIS INT A DOUBLE AGAIN
+   if(direction == 0){ //need to approximate for equal to 0 with doubles. 
+      int fwd_cnt = round(n); 
+      while(fwd_cnt >= 0 && y_coord >= 0 && x_coord >= 0 && y_coord < ROW_HEIGHT && x_coord < COL_WIDTH){
+         p->grid[y_coord][x_coord] = WHITE;
+         y_coord--;
+         fwd_cnt--;
+      }
+   }
+}
 
 //HELPER FUNCTIONS
 
@@ -391,7 +471,8 @@ void str2buff(Program *p, char tst[TSTSTRLEN], int numwords)
       while(isgraph(tst[string_index])){
          string_index++;
       }
-      string_index++; //increment once more to get past space
+      string_index++; //deleted parsing tests for now. probably need to add them back in (copy from parse.c)
+//increment once more to get past space
       word_index++;
    }
 }
@@ -411,6 +492,33 @@ void test(void)
    // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
 
    // To do: make assert testing exhaustive
+
+   //*** INTERPRETING TESTS ***
+
+   char tst[ROW_HEIGHT*COL_WIDTH+1];
+   
+   //empty grid
+
+   assert(empty_grid(prog)==true);
+   init_turtle(prog);
+   grid2str(tst, prog);
+   //test that there's a 'W' in the middle cell of the grid
+   assert(strcmp(tst, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         W                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ")==0); 
+   //test that x = mid, y = mid, direction = 0
+      //create function to do this that takes x, y, and degrees as parameters
+   //print_grid(prog);
+
+   //draw_forward
+   
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 15 END", 4); 
+   Prog(prog);
+   print_grid(prog);
+   clear_buff(prog);
+   rst_ptr(prog);
+
+   // *** PARSING TESTS ***
 
    //NON-RECURSIVE FUNCTIONS
    
@@ -1496,9 +1604,7 @@ void test(void)
    //get_arg_filename
 
    //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
-
-   //FREE
-
+   
    free(prog);
    
 }
