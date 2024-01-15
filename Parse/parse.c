@@ -10,6 +10,8 @@
 
 // what happens if there are no spaces between "words" in the ttl file. should parse fail?
 
+// set things up so program expects .ttl files in TTL folder not in Parse folder
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -458,6 +460,8 @@ void test(void)
 
    // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
 
+   // To do: make assert testing exhaustive
+
    //NON-RECURSIVE FUNCTIONS
    
    //Num
@@ -466,6 +470,7 @@ void test(void)
 
    strcpy(prog->wds[0], "-17.99");
    assert(Num(prog)==true);
+   //To do......
 
    strcpy(prog->wds[0], "d"); //not a double
    assert(Num(prog)==false);
@@ -810,7 +815,7 @@ void test(void)
    str2buff(prog, "RIGHT d.99", 2); //not a double
    assert(Ins(prog)==false);
 
-     clear_buff(prog);
+   clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "COLOUR $A", 2); //valid Col instruction
    assert(Ins(prog)==true);
@@ -1443,7 +1448,6 @@ void test(void)
    //when Ins is expanded to include Col etc, retest this function with this string 
    //str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } COLOUR $C FORWARD $D RIGHT 90 END", 14); // long expression
 
-
    // HELPER FUNCTIONS 
 
    //word_matches 
@@ -1461,7 +1465,87 @@ void test(void)
    str2buff(prog, "BLUE", 1); 
    assert(word_matches(prog, "RED")==false); //different word
 
-   //Add assert testing for helper functions (i.e. not Grammar functions)
+   //clear_buff
+
+   str2buff(prog, "START", 1); // set one word
+   clear_buff(prog); //clear one word
+   assert(word_matches(prog, "")==true);
+   rst_ptr(prog);
+
+   str2buff(prog, "START END", 2); // set two words
+   clear_buff(prog); //clear two words
+   assert(word_matches(prog, "")==true);
+   rst_ptr(prog);
+
+   str2buff(prog, "START OVER END", 3); // set two words
+   clear_buff(prog); //clear two words
+   assert(word_matches(prog, "")==true);
+   rst_ptr(prog);
+
+   str2buff(prog, "ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN", 10); // set 10 words
+   clear_buff(prog); //clear 10 words
+   assert(word_matches(prog, "")==true);
+   rst_ptr(prog);
+
+   //rst_ptr
+
+   str2buff(prog, "FORWARD 10", 2); 
+   assert(word_matches(prog, "FORWARD")==true); //current word is 1st
+   Fwd(prog); //Fwd moves ptr on one
+   assert(word_matches(prog, "10")==true); //current word is 2nd
+   rst_ptr(prog);
+   assert(word_matches(prog, "FORWARD")==true); //current word is 1st again
+
+   str2buff(prog, "START RIGHT 11", 3); 
+   Prog(prog); //Prog moves ptr on 
+   rst_ptr(prog);
+   assert(word_matches(prog, "START")==true); //current word is 1st again
+
+   str2buff(prog, "SET A ( $A 0.25 - )", 7);
+   Set(prog); //Set moves ptr on
+   rst_ptr(prog);
+   assert(word_matches(prog, "SET")==true); //current word is 1st again
+
+   //next_word
+
+   str2buff(prog, "SET A ( $A 0.25 - )", 7);
+   assert(word_matches(prog, "SET")==true); //first word is "SET"
+   next_word(prog);
+   assert(word_matches(prog, "A")==true); //2nd word is "A"
+   next_word(prog);
+   assert(word_matches(prog, "(")==true); //3rd word is "("
+   next_word(prog);
+   assert(word_matches(prog, "$A")==true); //4th word is "$A"
+   next_word(prog);
+   assert(word_matches(prog, "0.25")==true); //5th word is "0.25"
+   next_word(prog);
+   assert(word_matches(prog, "-")==true); //6th word is "-"
+   next_word(prog);
+   assert(word_matches(prog, ")")==true); //7th word is ")"
+   rst_ptr(prog);
+
+   //str2buff
+
+   str2buff(prog, "SET B ( $W 10 * )", 7);
+   assert(strcmp(prog->wds[prog->cw], "SET")==0); //1st word is "SET"
+   next_word(prog);
+   assert(strcmp(prog->wds[prog->cw], "B")==0); //2nd word is "B"
+   next_word(prog);
+   assert(strcmp(prog->wds[prog->cw], "(")==0); //3rd word is "("
+   next_word(prog);
+   assert(strcmp(prog->wds[prog->cw], "$W")==0); //4th word is "$W"
+   next_word(prog);
+   assert(strcmp(prog->wds[prog->cw], "10")==0); //5th word is "10"
+   next_word(prog);
+   assert(strcmp(prog->wds[prog->cw], "*")==0); //6th word is "*"
+   next_word(prog);
+   assert(strcmp(prog->wds[prog->cw], ")")==0); //7th word is ")"
+
+   //testing for str2buff and next_word is a bit circular... 
+
+   //get_arg_filename
+
+   //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
 
    //FREE
 
