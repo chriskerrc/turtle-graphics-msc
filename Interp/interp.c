@@ -3,6 +3,7 @@
 //run sanitizer etc 
 //is extremely long line in assert test ok?
 //think about what happens in empty loop: Neill might test for this 
+//currently my output for donothing.ttl is the turtle in start position, but it should print nothing: only init turtle under certain conditions
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +32,7 @@ int main(int argc, char *argv[])
    if(Prog(prog)){
       //printf("Parsed OK\n");
       fclose(fp);
+      print_grid(prog);
       free(prog); 
       return EXIT_SUCCESS;
    }
@@ -412,24 +414,27 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
 }
 
 void draw_forward(Program *p, double n)
-{
+{   
    //get current location from Program struct 
    int y_coord = round(p->curr_y);
    int x_coord = round(p->curr_x);
-   int direction = p->curr_direction; //make this a double
+   int direction = round(p->curr_direction); 
    
+   int fwd_cnt = round(n); 
    //if direction is 0, take away y coordinate each time
    //for each n, add a char in front of current position
    //decrement counter each time
-   //MAKE THIS INT A DOUBLE AGAIN
-   if(direction == 0){ //need to approximate for equal to 0 with doubles. 
-      int fwd_cnt = round(n); 
+   if(direction == 0){ 
       while(fwd_cnt >= 0 && y_coord >= 0 && x_coord >= 0 && y_coord < ROW_HEIGHT && x_coord < COL_WIDTH){
          p->grid[y_coord][x_coord] = WHITE;
          y_coord--;
          fwd_cnt--;
       }
+      //update turtle position
+      fwd_cnt = round(n); //reset fwd_cnt
+      p->curr_y -= fwd_cnt;
    }
+   
 }
 
 //HELPER FUNCTIONS
@@ -514,7 +519,7 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "START FORWARD 15 END", 4); 
    Prog(prog);
-   print_grid(prog);
+   //print_grid(prog);
    clear_buff(prog);
    rst_ptr(prog);
 
@@ -1511,7 +1516,7 @@ void test(void)
    //word_matches 
    clear_buff(prog);
    rst_ptr(prog);
-   str2buff(prog, "GREEN", 1); 
+   str2buff(prog, "GREEN", 1);
    assert(word_matches(prog, "GREEN")==true);
 
    str2buff(prog, "}", 1); 

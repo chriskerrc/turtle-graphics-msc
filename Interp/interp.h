@@ -30,7 +30,7 @@ struct prog{
    char grid[ROW_HEIGHT][COL_WIDTH];
    double curr_y;
    double curr_x; 
-   int curr_direction;
+   double curr_direction;
 };
 typedef struct prog Program;
 
@@ -71,6 +71,7 @@ bool empty_area(Program *p);
 void init_turtle(Program *p);
 void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p);
 void draw_forward(Program *p, double n);
+void print_grid(Program *p);
 
 //Test function
 void test(void);
