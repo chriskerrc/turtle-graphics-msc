@@ -9,6 +9,46 @@
 
 //TO DO: do diff on my txt files vs Neill's to check right number of columns etc. 
 
+//TRIG
+
+//theta is angle given in .ttl file 
+// alpha is angle in right angled triangle
+// angles given in degrees but need to be converted to radians
+// x = adj, y = opp
+//opp = hyp * sin(theta)
+//adj = hyp * cos(theta)
+// if 0 < theta < 90
+   // alpha = 90 - theta
+   // x is +ve
+   // y is +ve
+// if 90 < theta < 180
+   // alpha = theta - 90
+   // x is +ve
+   // y is -ve
+// if 180 < theta < 270
+   // alpha = 270 - theta
+   // x is -ve
+   // y is -ve
+// if 270 < theta < 360
+   // alpha = theta - 270 
+   // x is -ve
+   // y is +ve
+// if theta = 0 or 360
+   // x is 0
+   // y is +ve 
+// if theta = 90 
+   // x is +ve
+   // y is 0
+// if theta = 180 
+   // x is 0
+   // y is -ve
+// if theta = 270
+   // x is -ve
+   // y is 0
+
+// create function to return x ie adj given angle in degrees (double) and length of hypotenuse (int)
+// create function to return y ie opp given angle in degrees (double) and length of hypotenuse (int)
+
 int main(int argc, char *argv[]) //make main function shorter
 {
    test();
@@ -414,7 +454,7 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
             str_index++;
          }
          else{
-            str[str_index] = ' ';
+            str[str_index] = SPACE;
             str_index++;
          }
       }
@@ -468,6 +508,12 @@ void output_file(FILE* fpout, Program *p)
       }
       fputc('\n', fpout);
    }
+}
+
+double deg2rad(double deg)
+{
+   double rad = deg * (PI/180);
+   return rad; 
 }
 
 //HELPER FUNCTIONS
@@ -545,6 +591,14 @@ void test(void)
    //print_grid(prog);
    clear_buff(prog);
    rst_ptr(prog);
+
+   //deg2rad
+
+   assert(fabs(deg2rad(90)-1.570796)<= 0.000001); //90 deg
+   assert(fabs(deg2rad(45)-0.785398)<= 0.000001); //45 deg
+   assert(fabs(deg2rad(0)-0.000000)<= 0.000001); //0 deg
+   assert(fabs(deg2rad(100)-1.745329)<= 0.000001); //100 deg
+   assert(fabs(deg2rad(270)-4.712389)<= 0.000001); //270 deg
 
    // *** PARSING TESTS ***
 

@@ -23,6 +23,8 @@
 #define MID_COL 25
 #define MID_ROW 16
 #define WHITE 'W'
+#define SPACE ' '
+#define PI 3.14159265358979323846
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -73,6 +75,7 @@ void draw_forward(Program *p, double n);
 void print_grid(Program *p);
 void write_file(char *argv[], Program *p);
 void output_file(FILE* fpout, Program *p);
+double deg2rad(double deg);
 
 //Test function
 void test(void);
