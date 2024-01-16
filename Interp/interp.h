@@ -59,7 +59,6 @@ bool Loop(Program *p);
 bool over_lst_inslst(Program *p);
 
 //parser helper functions
-bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int numwords);
 void rst_pt(Program *p);
@@ -72,6 +71,8 @@ void init_turtle(Program *p);
 void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p);
 void draw_forward(Program *p, double n);
 void print_grid(Program *p);
+void write_file(char *argv[], Program *p);
+void output_file(FILE* fpout, Program *p);
 
 //Test function
 void test(void);

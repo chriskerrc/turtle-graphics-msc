@@ -2,45 +2,53 @@
 
 //run sanitizer etc 
 //is extremely long line in assert test ok?
-//think about what happens in empty loop: Neill might test for this 
+//think about what happens in empty loop: Neill might test for this. for file fail_parse_ok_interp.ttl, make sure you don't stop looking for ENDs after the first one. Need to make sure there's a closing END for each opening LOOP
 //currently my output for donothing.ttl is the turtle in start position, but it should print nothing: only init turtle under certain conditions
+//need to check that output .txt file name is same as input .ttl file (with addition of out_)?
+//should the interpreter run when parsing fails in this file? or only when it succeeds?
 
-int main(int argc, char *argv[])
+//TO DO: do diff on my txt files vs Neill's to check right number of columns etc. 
+
+int main(int argc, char *argv[]) //make main function shorter
 {
    test();
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
-   char filename[MAXFILENAME]; 
-   init_turtle(prog); //added init so turtle for read in file is initialized 
+   init_turtle(prog); //added init so turtle for read in file is initialized (need to only do this if turtle does something)
   
-   if(get_arg_filename(argc, argv, filename) != true){
-      fprintf(stderr, "Didn't get filename\n");
+   if(argc != 2 && argc != 3){ //magic numbers
+      fprintf(stderr, "Expecting two or three command line arguments\n");
       exit(EXIT_FAILURE);
    }
-
-   FILE* fp = fopen(filename, "r");
-   if(fp == NULL){
-       fprintf(stderr, "Cannot read file %s ?\n", filename);
+   
+   //move this to open read file wrapper function 
+   FILE* fpin = fopen(argv[1], "r");
+   if(fpin == NULL){
+       fprintf(stderr, "Cannot read file %s ?\n", argv[1]);
        exit(EXIT_FAILURE);
    }
    
-   while(fscanf(fp, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
+   while(fscanf(fpin, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
       //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
-   
+
    if(Prog(prog)){
       //printf("Parsed OK\n");
-      fclose(fp);
-      print_grid(prog);
+      fclose(fpin);
+      print_grid(prog); //need to decide when and where to print_grid: only if argc == 2
+      //output to .txt file
+      if(argc == 3){ //magic number
+         write_file(argv, prog);
+      }
       free(prog); 
       return EXIT_SUCCESS;
    }
-     
-    //printf("Not parsed OK\n");
-    fclose(fp);
-    free(prog); 
-    return EXIT_FAILURE;
+
+   //printf("Not parsed OK\n");
+   fclose(fpin);
+   free(prog); 
+   return EXIT_FAILURE;
 }
 
 bool Prog(Program *p)
@@ -434,20 +442,35 @@ void draw_forward(Program *p, double n)
       fwd_cnt = round(n); //reset fwd_cnt
       p->curr_y -= fwd_cnt;
    }
-   
+}
+
+void write_file(char *argv[], Program *p)
+{
+   FILE* fpout = fopen(argv[2], "w"); //magic number
+      if(fpout == NULL){
+         fprintf(stderr, "Cannot write to file %s ?\n", argv[2]); //magic number
+         exit(EXIT_FAILURE);
+      }
+   output_file(fpout, p);
+   fclose(fpout);
+}
+
+void output_file(FILE* fpout, Program *p)
+{
+   for(int row = 0; row < ROW_HEIGHT; row++){
+      for(int col = 0; col < COL_WIDTH; col++){
+         if(isalpha(p->grid[row][col])){
+            fputc(p->grid[row][col], fpout);
+         }
+         else{
+            fputc(' ', fpout);
+         }
+      }
+      fputc('\n', fpout);
+   }
 }
 
 //HELPER FUNCTIONS
-
-bool get_arg_filename(int argc, char *argv[], char* filename)
-{
-   if(argc == 2){
-      if(sscanf(argv[1], "%s", filename)==1){
-         return true;
-      }
-   }
-   return false;
-}
 
 void clear_buff(Program *p)
 {
