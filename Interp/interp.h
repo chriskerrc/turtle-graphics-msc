@@ -25,6 +25,11 @@
 #define WHITE 'W'
 #define SPACE ' '
 #define PI 3.14159265358979323846
+#define RAD_CONST 180
+#define EAST_ANGLE 90
+#define SOUTH_ANGLE 180
+#define WEST_ANGLE 270
+#define NORTH_ANGLE 360
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -71,11 +76,18 @@ bool word_matches(Program *p, char match[MAXTOKENSIZE]);
 bool empty_area(Program *p);
 void init_turtle(Program *p);
 void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p);
-void draw_forward(Program *p, double n);
 void print_grid(Program *p);
 void write_file(char *argv[], Program *p);
 void output_file(FILE* fpout, Program *p);
+void draw_forward(Program *p, double distance);
+void draw_forward_cardinal(Program *p, int direction, double distance);
+double update_y_position(Program *p, double y_delta);
+double update_x_position(Program *p, double x_delta);
+void update_position_cardinal(Program *p, int direction, double distance); //N S E W cases 
 double deg2rad(double deg);
+int get_adjacent_len(double tri_angle, double hypotenuse);
+int get_opposite_len(double tri_angle, double hypotenuse);
+double direction_to_tri_angle(double direction); 
 
 //Test function
 void test(void);

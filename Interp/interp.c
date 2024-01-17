@@ -6,7 +6,8 @@
 //currently my output for donothing.ttl is the turtle in start position, but it should print nothing: only init turtle under certain conditions
 //need to check that output .txt file name is same as input .ttl file (with addition of out_)?
 //should the interpreter run when parsing fails in this file? or only when it succeeds?
-
+//handle case where direction is more than 360 
+//do assert testing on all trig stuff before moving on 
 //TO DO: do diff on my txt files vs Neill's to check right number of columns etc. 
 
 //TRIG
@@ -461,27 +462,71 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
    }
 }
 
-void draw_forward(Program *p, double n)
+void draw_forward(Program *p, double distance)
 {   
-   //get current location from Program struct 
+   int direction = round(p->curr_direction);
+   //next line is too long
+   if(direction == 0 || direction == NORTH_ANGLE || direction == EAST_ANGLE || direction == SOUTH_ANGLE || direction == WEST_ANGLE){ 
+      draw_forward_cardinal(p, direction, distance); 
+   }
+      
+   //handle non cardinal directions with four dedicated functions 
+}
+
+void draw_forward_cardinal(Program *p, int direction, double distance)
+{
    int y_coord = round(p->curr_y);
    int x_coord = round(p->curr_x);
-   int direction = round(p->curr_direction); 
-   
-   int fwd_cnt = round(n); 
-   //if direction is 0, take away y coordinate each time
-   //for each n, add a char in front of current position
-   //decrement counter each time
-   if(direction == 0){ 
-      while(fwd_cnt >= 0 && y_coord >= 0 && x_coord >= 0 && y_coord < ROW_HEIGHT && x_coord < COL_WIDTH){
-         p->grid[y_coord][x_coord] = WHITE;
+   printf("start y %i\n", y_coord);
+   printf("start x %i\n", x_coord);
+   int fwd_cnt = round(distance); 
+   while(fwd_cnt >= 0 && y_coord >= 0 && x_coord >= 0 && y_coord < ROW_HEIGHT && x_coord < COL_WIDTH){
+      p->grid[y_coord][x_coord] = WHITE; //need to handle changing colours (get current colour from struct)
+      if(direction == 0 || direction == NORTH_ANGLE){
          y_coord--;
-         fwd_cnt--;
       }
-      //update turtle position
-      fwd_cnt = round(n); //reset fwd_cnt
-      p->curr_y -= fwd_cnt;
+      if(direction == EAST_ANGLE){
+         x_coord++;
+      }
+      if(direction == SOUTH_ANGLE){
+         y_coord++;
+      }
+      if(direction == WEST_ANGLE){
+         x_coord--;
+      }
+      fwd_cnt--;
    }
+   update_position_cardinal(p, direction, distance);
+}
+
+void update_position_cardinal(Program *p, int direction, double distance)
+{
+   if(direction == 0 || direction == NORTH_ANGLE){
+      update_y_position(p, -distance);
+   }
+   if(direction == EAST_ANGLE){
+      update_x_position(p, distance);
+   }
+   if(direction == SOUTH_ANGLE){
+      update_y_position(p, distance);
+   }
+   if(direction == WEST_ANGLE){
+      update_x_position(p, -distance);
+   }
+} 
+
+double update_y_position(Program *p, double y_delta)
+{
+   p->curr_y += y_delta; //should the coordinates be rounded to ints before printing e.g. now?
+   printf("updated y %lf\n", p->curr_y);
+   return p->curr_y;
+}
+
+double update_x_position(Program *p, double x_delta)
+{
+   p->curr_x += x_delta; //should the coordinates be rounded to ints before printing e.g. now?
+   printf("updated x %lf\n", p->curr_x);
+   return p->curr_x;
 }
 
 void write_file(char *argv[], Program *p)
@@ -512,9 +557,45 @@ void output_file(FILE* fpout, Program *p)
 
 double deg2rad(double deg)
 {
-   double rad = deg * (PI/180);
+   double rad = deg * (PI/RAD_CONST);
    return rad; 
 }
+
+//NOTE: need to enforce that tri_angle is less than 90 for adj and opp functions (more than 90 and it's impossible right angled triangle)
+
+int get_adjacent_len(double tri_angle, double hypotenuse)
+{
+   double tri_angle_rad = deg2rad(tri_angle);
+   double adjacent_len = hypotenuse * cos(tri_angle_rad);
+   int adjacent_len_int = round(adjacent_len);
+   return adjacent_len_int; 
+}
+
+int get_opposite_len(double tri_angle, double hypotenuse)
+{
+   double tri_angle_rad = deg2rad(tri_angle);
+   double opposite_len = hypotenuse * sin(tri_angle_rad);
+   int opposite_len_int = round(opposite_len);
+   return opposite_len_int; 
+}
+
+double direction_to_tri_angle(double direction)
+{
+   double angle = 0; 
+   if(direction > 0 && direction < EAST_ANGLE){
+      angle = EAST_ANGLE - direction;
+   }
+   if(direction > EAST_ANGLE && direction < SOUTH_ANGLE){
+      angle = direction - EAST_ANGLE;
+   }
+   if(direction > SOUTH_ANGLE && direction < WEST_ANGLE){
+      angle = WEST_ANGLE - direction;
+   }
+   if(direction > WEST_ANGLE && direction < NORTH_ANGLE){
+      angle = direction - WEST_ANGLE;
+   }
+   return angle;
+} 
 
 //HELPER FUNCTIONS
 
@@ -599,6 +680,46 @@ void test(void)
    assert(fabs(deg2rad(0)-0.000000)<= 0.000001); //0 deg
    assert(fabs(deg2rad(100)-1.745329)<= 0.000001); //100 deg
    assert(fabs(deg2rad(270)-4.712389)<= 0.000001); //270 deg
+
+   //TEST UNTESTED INTERPRETER FUNCTIONS, INCUDING VOID FUNCTIONS
+
+   //update_y_position 
+
+   //TO DO
+
+   //update_x_position 
+
+   //TO DO
+
+   //update_position_cardinal 
+
+   //TO DO
+
+   //direction_to_tri_angle
+    
+   assert(fabs(direction_to_tri_angle(45)-45)<= 0.000001); // 0 < angle < 90
+   assert(fabs(direction_to_tri_angle(51)-39)<= 0.000001); // 0 < angle < 90
+   assert(fabs(direction_to_tri_angle(100)-10)<= 0.000001); // 90 < angle < 180
+   assert(fabs(direction_to_tri_angle(135)-45)<= 0.000001); // 90 < angle < 180
+   assert(fabs(direction_to_tri_angle(225)-45)<= 0.000001); // 180 < angle < 270
+   assert(fabs(direction_to_tri_angle(260)-10)<= 0.000001); // 180 < angle < 270
+   assert(fabs(direction_to_tri_angle(315)-45)<= 0.000001); // 180 < angle < 270
+   assert(fabs(direction_to_tri_angle(322)-52)<= 0.000001); // 180 < angle < 270
+
+   //get_adjacent_len
+   assert(get_adjacent_len(45, 8)==6);
+   assert(get_adjacent_len(5, 10)==10);
+   assert(get_adjacent_len(71, 5)==2);
+
+   //get_opposite_len
+   assert(get_opposite_len(45, 13)==9);
+   assert(get_opposite_len(67, 4)==4);
+   assert(get_opposite_len(19, 5)==2);
+   
+
+   //NOTE: found a bug where get_adjacent_len and get_opposite_len were throwing away decimals because I wasn't using the round function 
+   //Previously the double was an int from the start, now it starts as a double before being put through (round) and converted to int
+
 
    // *** PARSING TESTS ***
 

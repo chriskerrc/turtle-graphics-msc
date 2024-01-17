@@ -14,6 +14,8 @@
 
 //check I've handled reading in .ttl files from TTLs directory correctly 
 
+//add meaningful error messages for parse failure (without exiting/crashing program)
+
 #include "parse.h"
 
 
