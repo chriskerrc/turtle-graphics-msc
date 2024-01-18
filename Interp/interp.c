@@ -153,7 +153,7 @@ bool Fwd(Program *p)
       if(Varnum(p)){
          if(Num(p)){
             if(sscanf(p->wds[p->cw], "%lf", &fwd_step)== 1){
-               draw_forward(p, fwd_step);
+               //draw_forward(p, fwd_step);
                //printf("calling draw forward\n");
                return true;
             }
@@ -169,9 +169,17 @@ bool Fwd(Program *p)
 
 bool Rgt(Program *p)
 {
+   double new_direction = 0; 
    if(word_matches(p, "RIGHT")){
       next_word(p);
       if(Varnum(p)){
+         if(Num(p)){ //this code is copied from Fwd: make it a function instead
+            if(sscanf(p->wds[p->cw], "%lf", &new_direction)== 1){
+               change_direction(p, new_direction);
+               //printf("calling change direction\n");
+               return true;
+            }
+         }
          return true;
       }       
    }   
@@ -462,58 +470,7 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
    }
 }
 
-void draw_forward(Program *p, double distance)
-{   
-   int direction = round(p->curr_direction);
-   //next line is too long
-   if(direction == 0 || direction == NORTH_ANGLE || direction == EAST_ANGLE || direction == SOUTH_ANGLE || direction == WEST_ANGLE){ 
-      draw_forward_cardinal(p, direction, distance); 
-   }
-      
-   //handle non cardinal directions with four dedicated functions 
-}
-
-void draw_forward_cardinal(Program *p, int direction, double distance)
-{
-   int y_coord = round(p->curr_y);
-   int x_coord = round(p->curr_x);
-   printf("start y %i\n", y_coord);
-   printf("start x %i\n", x_coord);
-   int fwd_cnt = round(distance); 
-   while(fwd_cnt >= 0 && y_coord >= 0 && x_coord >= 0 && y_coord < ROW_HEIGHT && x_coord < COL_WIDTH){
-      p->grid[y_coord][x_coord] = WHITE; //need to handle changing colours (get current colour from struct)
-      if(direction == 0 || direction == NORTH_ANGLE){
-         y_coord--;
-      }
-      if(direction == EAST_ANGLE){
-         x_coord++;
-      }
-      if(direction == SOUTH_ANGLE){
-         y_coord++;
-      }
-      if(direction == WEST_ANGLE){
-         x_coord--;
-      }
-      fwd_cnt--;
-   }
-   update_position_cardinal(p, direction, distance);
-}
-
-void update_position_cardinal(Program *p, int direction, double distance)
-{
-   if(direction == 0 || direction == NORTH_ANGLE){
-      update_y_position(p, -distance);
-   }
-   if(direction == EAST_ANGLE){
-      update_x_position(p, distance);
-   }
-   if(direction == SOUTH_ANGLE){
-      update_y_position(p, distance);
-   }
-   if(direction == WEST_ANGLE){
-      update_x_position(p, -distance);
-   }
-} 
+//Direction
 
 double update_y_position(Program *p, double y_delta)
 {
@@ -528,6 +485,70 @@ double update_x_position(Program *p, double x_delta)
    printf("updated x %lf\n", p->curr_x);
    return p->curr_x;
 }
+
+double deg2rad(double deg)
+{
+   double rad = deg * (PI/RAD_CONST);
+   return rad; 
+}
+
+void change_direction(Program *p, double new_direction)
+{
+   double curr_direction = p->curr_direction;
+   p->curr_direction = new_direction + curr_direction; 
+}
+
+double offset_degree(double deg)
+{
+   double new_angle = 0;
+   if(deg > 0 && deg > MAX_ANGLE){
+      new_angle = deg; 
+   }
+   if(deg > MAX_ANGLE){
+      new_angle = fmod(deg,MAX_ANGLE); 
+   }
+   if(deg < 0){
+      new_angle = neg_degree_to_pos(deg);
+   }
+   return new_angle; 
+}
+
+double neg_degree_to_pos(double deg)
+{
+   double new_angle = deg;
+   while(new_angle < 0){
+      new_angle = new_angle + MAX_ANGLE;
+   }
+   return new_angle; 
+}
+
+double get_delta_y(double direction, double distance)
+{
+   double angle_rad = deg2rad(direction);
+   double delta_y = distance * sin(angle_rad);
+   return delta_y; 
+}
+
+double get_delta_x(double direction, double distance)
+{
+   double angle_rad = deg2rad(direction);
+   double delta_x = distance * cos(angle_rad);
+   return delta_x; 
+}
+
+double get_new_y(Program *p, double delta_y)
+{
+   double new_y = p->curr_y + delta_y;
+   return new_y; 
+}
+
+double get_new_x(Program *p, double delta_x)
+{
+   double new_x = p->curr_x + delta_x;
+   return new_x;
+}
+
+//File output 
 
 void write_file(char *argv[], Program *p)
 {
@@ -554,48 +575,6 @@ void output_file(FILE* fpout, Program *p)
       fputc('\n', fpout);
    }
 }
-
-double deg2rad(double deg)
-{
-   double rad = deg * (PI/RAD_CONST);
-   return rad; 
-}
-
-//NOTE: need to enforce that tri_angle is less than 90 for adj and opp functions (more than 90 and it's impossible right angled triangle)
-
-int get_adjacent_len(double tri_angle, double hypotenuse)
-{
-   double tri_angle_rad = deg2rad(tri_angle);
-   double adjacent_len = hypotenuse * cos(tri_angle_rad);
-   int adjacent_len_int = round(adjacent_len);
-   return adjacent_len_int; 
-}
-
-int get_opposite_len(double tri_angle, double hypotenuse)
-{
-   double tri_angle_rad = deg2rad(tri_angle);
-   double opposite_len = hypotenuse * sin(tri_angle_rad);
-   int opposite_len_int = round(opposite_len);
-   return opposite_len_int; 
-}
-
-double direction_to_tri_angle(double direction)
-{
-   double angle = 0; 
-   if(direction > 0 && direction < EAST_ANGLE){
-      angle = EAST_ANGLE - direction;
-   }
-   if(direction > EAST_ANGLE && direction < SOUTH_ANGLE){
-      angle = direction - EAST_ANGLE;
-   }
-   if(direction > SOUTH_ANGLE && direction < WEST_ANGLE){
-      angle = WEST_ANGLE - direction;
-   }
-   if(direction > WEST_ANGLE && direction < NORTH_ANGLE){
-      angle = direction - WEST_ANGLE;
-   }
-   return angle;
-} 
 
 //HELPER FUNCTIONS
 
@@ -683,42 +662,43 @@ void test(void)
 
    //TEST UNTESTED INTERPRETER FUNCTIONS, INCUDING VOID FUNCTIONS
 
-   //update_y_position 
+   //TO DO ...............................................
 
-   //TO DO
+   //offset_deg
 
-   //update_x_position 
+   assert(fabs(offset_degree(-10)-350)<= 0.000001); //-10 deg (less than 0)
+   assert(fabs(offset_degree(-43)-317)<= 0.000001); //-43 deg (less than 0)
+   assert(fabs(offset_degree(-365)-355)<= 0.000001); //-365 deg (less than -360)
 
-   //TO DO
-
-   //update_position_cardinal 
-
-   //TO DO
-
-   //direction_to_tri_angle
-    
-   assert(fabs(direction_to_tri_angle(45)-45)<= 0.000001); // 0 < angle < 90
-   assert(fabs(direction_to_tri_angle(51)-39)<= 0.000001); // 0 < angle < 90
-   assert(fabs(direction_to_tri_angle(100)-10)<= 0.000001); // 90 < angle < 180
-   assert(fabs(direction_to_tri_angle(135)-45)<= 0.000001); // 90 < angle < 180
-   assert(fabs(direction_to_tri_angle(225)-45)<= 0.000001); // 180 < angle < 270
-   assert(fabs(direction_to_tri_angle(260)-10)<= 0.000001); // 180 < angle < 270
-   assert(fabs(direction_to_tri_angle(315)-45)<= 0.000001); // 180 < angle < 270
-   assert(fabs(direction_to_tri_angle(322)-52)<= 0.000001); // 180 < angle < 270
-
-   //get_adjacent_len
-   assert(get_adjacent_len(45, 8)==6);
-   assert(get_adjacent_len(5, 10)==10);
-   assert(get_adjacent_len(71, 5)==2);
-
-   //get_opposite_len
-   assert(get_opposite_len(45, 13)==9);
-   assert(get_opposite_len(67, 4)==4);
-   assert(get_opposite_len(19, 5)==2);
+   //neg_deg_to_pos
    
+   assert(fabs(neg_degree_to_pos(-12)-348)<= 0.000001); //-12 (less than 0)
+   assert(fabs(neg_degree_to_pos(-365)-355)<= 0.000001); //-365 (less than -360)
+   assert(fabs(neg_degree_to_pos(-735)-345)<= 0.000001); //-735 (less than -720)
 
-   //NOTE: found a bug where get_adjacent_len and get_opposite_len were throwing away decimals because I wasn't using the round function 
-   //Previously the double was an int from the start, now it starts as a double before being put through (round) and converted to int
+   //get_delta_y 
+   assert(fabs(get_delta_y(45, 10)-7.07107)<=0.00001); // between 0 and 90
+   assert(fabs(get_delta_y(135, 5)-3.53553)<=0.00001); // between 90 and 180
+   assert(fabs(get_delta_y(190, 4)+0.69459)<=0.00001); // between 180 and 270
+   assert(fabs(get_delta_y(340, 12)+4.10424)<=0.00001); // between 270 and 360 
+
+   //get_delta_x
+   assert(fabs(get_delta_x(12, 8)-7.82518)<=0.00001); // between 0 and 90
+   assert(fabs(get_delta_x(147, 5)+4.19335)<=0.00001); // between 90 and 180
+   assert(fabs(get_delta_x(210, 6)+5.19615)<=0.00001); // between 180 and 270
+   assert(fabs(get_delta_x(300, 7)-3.5)<=0.00001); // between 270 and 360 
+
+   //get_new_y 
+   prog->curr_y = 10;
+   assert(fabs(get_new_y(prog, 3)-13)<=0.00001);
+   prog->curr_y = 13;
+   assert(fabs(get_new_y(prog, 4)-17)<=0.00001);
+
+   //get_new_x 
+   prog->curr_x = 6;
+   assert(fabs(get_new_x(prog, 3)-9)<=0.00001);
+   prog->curr_x = 9;
+   assert(fabs(get_new_x(prog, 5)-14)<=0.00001);
 
 
    // *** PARSING TESTS ***
