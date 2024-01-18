@@ -146,15 +146,15 @@ bool Ins(Program *p)
 
 bool Fwd(Program *p)
 {   
-   double fwd_step = 0;
+   double distance = 0;
    //printf("%s\n", p->wds[p->cw]);
    if(word_matches(p, "FORWARD")){ 
       next_word(p);
       if(Varnum(p)){
          if(Num(p)){
-            if(sscanf(p->wds[p->cw], "%lf", &fwd_step)== 1){
-               //draw_forward(p, fwd_step);
-               //printf("calling draw forward\n");
+            if(sscanf(p->wds[p->cw], "%lf", &distance)== 1){
+               draw_forward(p, distance);
+               printf("calling draw_forward\n");
                return true;
             }
          }
@@ -546,6 +546,55 @@ double get_new_x(Program *p, double delta_x)
 {
    double new_x = p->curr_x + delta_x;
    return new_x;
+}
+
+void draw_line(Program *p, double y_start, double x_start, double y_end, double x_end)
+{
+   double dy = y_end - y_start;
+   double dx = x_end - x_start; 
+   double error_term = ERROR_CONST * (dy - dx); 
+   int curr_y_plot = round(y_start);
+   int curr_x_plot = round(x_start);
+   plot_pixel(p, curr_y_plot, curr_x_plot);
+   while(curr_x_plot < x_end + 1){
+      if(error_term > 0){
+         curr_y_plot++;
+         error_term = error_term + ERROR_CONST * (dy - dx);  
+      }
+      if(error_term <= 0){
+         error_term = error_term + ERROR_CONST * dy;
+      }
+      curr_x_plot++; 
+      plot_pixel(p, curr_y_plot, curr_x_plot);
+   }
+}
+
+void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot)
+{
+   p->curr_y = curr_y_plot; 
+   p->curr_x = curr_x_plot; 
+}
+
+void draw_forward(Program *p, double distance)
+{
+   //get direction from struct
+      //put direction through offset_degree
+   //get curr_y from struct
+   //get curr_x from struct
+
+   //use direction, curr_y, curr_x to find coord end of line 
+
+      //get_delta_y
+      //get_delta_x
+      //get_new_y
+      //get_new_x
+
+   //draw line [with careful bounds checking]
+
+   //update_y_position in struct
+   //update_x_position in struct 
+
+   //somewhere (tbd): call print_grid <- think about how to handle neillbusywait 
 }
 
 //File output 

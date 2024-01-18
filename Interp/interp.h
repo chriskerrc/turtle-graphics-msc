@@ -27,6 +27,7 @@
 #define PI 3.14159265358979323846
 #define RAD_CONST 180
 #define MAX_ANGLE 360
+#define ERROR_CONST 2
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -84,6 +85,8 @@ double offset_degree(double deg);
 double neg_degree_to_pos(double deg);
 double get_delta_y(double direction, double distance);
 double get_delta_x(double direction, double distance);
+void draw_line(Program *p, double y_start, double x_start, double y_end, double x_end);//Bresenham line algorithm
+void draw_forward(Program *p, double distance);
 
 
 //Test function
