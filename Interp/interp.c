@@ -10,46 +10,6 @@
 //do assert testing on all trig stuff before moving on 
 //TO DO: do diff on my txt files vs Neill's to check right number of columns etc. 
 
-//TRIG
-
-//theta is angle given in .ttl file 
-// alpha is angle in right angled triangle
-// angles given in degrees but need to be converted to radians
-// x = adj, y = opp
-//opp = hyp * sin(theta)
-//adj = hyp * cos(theta)
-// if 0 < theta < 90
-   // alpha = 90 - theta
-   // x is +ve
-   // y is +ve
-// if 90 < theta < 180
-   // alpha = theta - 90
-   // x is +ve
-   // y is -ve
-// if 180 < theta < 270
-   // alpha = 270 - theta
-   // x is -ve
-   // y is -ve
-// if 270 < theta < 360
-   // alpha = theta - 270 
-   // x is -ve
-   // y is +ve
-// if theta = 0 or 360
-   // x is 0
-   // y is +ve 
-// if theta = 90 
-   // x is +ve
-   // y is 0
-// if theta = 180 
-   // x is 0
-   // y is -ve
-// if theta = 270
-   // x is -ve
-   // y is 0
-
-// create function to return x ie adj given angle in degrees (double) and length of hypotenuse (int)
-// create function to return y ie opp given angle in degrees (double) and length of hypotenuse (int)
-
 int main(int argc, char *argv[]) //make main function shorter
 {
    test();
@@ -77,7 +37,7 @@ int main(int argc, char *argv[]) //make main function shorter
    if(Prog(prog)){
       //printf("Parsed OK\n");
       fclose(fpin);
-      print_grid(prog); //need to decide when and where to print_grid: only if argc == 2
+      //print_grid(prog); //need to decide when and where to print_grid: only if argc == 2
       //output to .txt file
       if(argc == 3){ //magic number
          write_file(argv, prog);
@@ -176,7 +136,7 @@ bool Rgt(Program *p)
          if(Num(p)){ //this code is copied from Fwd: make it a function instead
             if(sscanf(p->wds[p->cw], "%lf", &new_direction)== 1){
                change_direction(p, new_direction);
-               //printf("calling change direction\n");
+               printf("calling change direction\n");
                return true;
             }
          }
@@ -472,18 +432,16 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
 
 //Direction
 
-double update_y_position(Program *p, double y_delta)
+void update_y_position(Program *p, double y_delta)
 {
    p->curr_y += y_delta; //should the coordinates be rounded to ints before printing e.g. now?
    printf("updated y %lf\n", p->curr_y);
-   return p->curr_y;
 }
 
-double update_x_position(Program *p, double x_delta)
+void update_x_position(Program *p, double x_delta)
 {
    p->curr_x += x_delta; //should the coordinates be rounded to ints before printing e.g. now?
    printf("updated x %lf\n", p->curr_x);
-   return p->curr_x;
 }
 
 double deg2rad(double deg)
@@ -498,7 +456,7 @@ void change_direction(Program *p, double new_direction)
    p->curr_direction = new_direction + curr_direction; 
 }
 
-double offset_degree(double deg)
+double validate_degree(double deg)
 {
    double new_angle = 0;
    if(deg > 0 && deg > MAX_ANGLE){
@@ -536,65 +494,143 @@ double get_delta_x(double direction, double distance)
    return delta_x; 
 }
 
-double get_new_y(Program *p, double delta_y)
+int get_new_y(Program *p, double delta_y)
 {
-   double new_y = p->curr_y + delta_y;
+   int new_y = round(p->curr_y + delta_y);
    return new_y; 
 }
 
-double get_new_x(Program *p, double delta_x)
+int get_new_x(Program *p, double delta_x)
 {
-   double new_x = p->curr_x + delta_x;
+   int new_x = round(p->curr_x + delta_x);
    return new_x;
 }
 
-void draw_line(Program *p, double y_start, double x_start, double y_end, double x_end)
+
+//this function is way too long: break it up 
+//line drawing algorithm adapted from .js here https://github.com/anushaihalapathirana/Bresenham-line-drawing-algorithm/blob/master/src/index.js
+void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
-   double dy = y_end - y_start;
-   double dx = x_end - x_start; 
-   double error_term = ERROR_CONST * (dy - dx); 
-   int curr_y_plot = round(y_start);
-   int curr_x_plot = round(x_start);
-   plot_pixel(p, curr_y_plot, curr_x_plot);
-   while(curr_x_plot < x_end + 1){
-      if(error_term > 0){
-         curr_y_plot++;
-         error_term = error_term + ERROR_CONST * (dy - dx);  
+   printf("y_start %i\n", y_start);
+   printf("x_start %i\n", x_start);
+   printf("y_end %i\n", y_end);
+   printf("x_end %i\n", x_end);
+
+   //calculate dy and dx
+   int abs_dx = abs(x_end - x_start); 
+   int abs_dy = abs(y_end - y_start);
+   int dx = x_end - x_start;
+   int dy = y_end - y_start; 
+
+   int x = x_start; 
+   int y = y_start; 
+   //plot starting points
+   plot_pixel(p, y, x);
+
+   int error_term = 0;
+   //slope < 1
+   if(abs_dx > abs_dy){
+      error_term = ERROR_CONST*abs_dy - abs_dx;
+      for(int i = 0; i < abs_dx; i++){
+         if(dx < 0){
+            x--; 
+         }
+         else{
+            x++;
+         }
+         if(error_term < 0){
+            error_term = error_term + ERROR_CONST*abs_dy; 
+         }
+         else{
+            if(dy < 0){
+               y--;
+            }
+            else{
+               y++;
+            }
+            error_term = error_term + (ERROR_CONST*abs_dy - ERROR_CONST*abs_dx);
+         }
+         plot_pixel(p, y, x);
       }
-      if(error_term <= 0){
-         error_term = error_term + ERROR_CONST * dy;
+   }
+   //slope is greater than or equal to 1
+   if(abs_dx <= abs_dy){
+      error_term = ERROR_CONST*abs_dx - abs_dy;
+      for(int i = 0; i < abs_dy; i++){
+         if(dy < 0){
+            y--;
+         }
+         else{
+            y++;
+         }
+         if(error_term < 0){
+            error_term = error_term + ERROR_CONST*abs_dx;
+         }
+         else{
+            if(dx < 0){
+               x--; 
+            }
+            else{
+               x++;
+            }
+            error_term = error_term + (ERROR_CONST*abs_dx) - (ERROR_CONST*abs_dy);
+         }
+         plot_pixel(p, y, x);
       }
-      curr_x_plot++; 
-      plot_pixel(p, curr_y_plot, curr_x_plot);
    }
 }
 
 void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot)
 {
-   p->curr_y = curr_y_plot; 
-   p->curr_x = curr_x_plot; 
+   p->grid[curr_y_plot][curr_x_plot] = WHITE;
+}
+
+bool is_x_in_bounds(double x)
+{
+   if(x >= 0 && x < COL_WIDTH){
+      return true;
+   }
+   return false; 
+}
+
+bool is_y_in_bounds(double y)
+{
+   if(y >= 0 && y < ROW_HEIGHT){
+      return true;
+   }
+   return false; 
 }
 
 void draw_forward(Program *p, double distance)
 {
-   //get direction from struct
-      //put direction through offset_degree
-   //get curr_y from struct
-   //get curr_x from struct
+   double raw_direction = p->curr_direction;
+   double valid_direction = validate_degree(raw_direction-ROTATE_CONST);
+   printf("valid direction %lf\n", valid_direction);
+   int start_y = round(p->curr_y);
+   int start_x = round(p->curr_x);
+   printf("start y %i\n", start_y);
+   printf("start x %i\n", start_x);
+   double delta_x = get_delta_x(valid_direction, distance);
+   double delta_y = get_delta_y(valid_direction, distance);
+   printf("delta y %lf\n", delta_y);
+   printf("delta x %lf\n", delta_x);
+   int end_y = get_new_y(p, delta_y);
+   int end_x = get_new_x(p, delta_x);
+   printf("end y %i\n", end_y);
+   printf("end x %i\n", end_x);
 
-   //use direction, curr_y, curr_x to find coord end of line 
+   //round x and y values to integers 
 
-      //get_delta_y
-      //get_delta_x
-      //get_new_y
-      //get_new_x
-
-   //draw line [with careful bounds checking]
-
-   //update_y_position in struct
-   //update_x_position in struct 
-
+   if(is_y_in_bounds(start_y) && is_x_in_bounds(start_x) && is_y_in_bounds(end_y) && is_x_in_bounds(end_x)){ //long line
+      draw_line(p, start_y, start_x, end_y, end_x);
+   }
+   else{
+      printf("Not in bounds\n");
+   }
+   update_y_position(p, delta_y);
+   update_x_position(p, delta_x);
    //somewhere (tbd): call print_grid <- think about how to handle neillbusywait 
+   print_grid(p);
 }
 
 //File output 
@@ -677,7 +713,7 @@ void test(void)
    // To do: make assert testing exhaustive
 
    //*** INTERPRETING TESTS ***
-
+   /*
    char tst[ROW_HEIGHT*COL_WIDTH+1];
    
    //empty grid
@@ -748,6 +784,16 @@ void test(void)
    assert(fabs(get_new_x(prog, 3)-9)<=0.00001);
    prog->curr_x = 9;
    assert(fabs(get_new_x(prog, 5)-14)<=0.00001);
+
+   //is_y_in_bounds
+   assert(is_y_in_bounds(4)); //in bounds
+   assert(!is_y_in_bounds(33)); //over bounds
+   assert(!is_y_in_bounds(-1)); //below bounds
+
+   //is_x_in_bounds
+   assert(is_y_in_bounds(7)); //in bounds
+   assert(!is_y_in_bounds(51)); //over bounds
+   assert(!is_y_in_bounds(-1)); //below bounds
 
 
    // *** PARSING TESTS ***
@@ -1836,7 +1882,7 @@ void test(void)
    //get_arg_filename
 
    //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
-   
+   */
    free(prog);
    
 }

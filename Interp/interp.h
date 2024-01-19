@@ -28,6 +28,7 @@
 #define RAD_CONST 180
 #define MAX_ANGLE 360
 #define ERROR_CONST 2
+#define ROTATE_CONST 90
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -77,16 +78,21 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p);
 void print_grid(Program *p);
 void write_file(char *argv[], Program *p);
 void output_file(FILE* fpout, Program *p);
-double update_y_position(Program *p, double y_delta);
-double update_x_position(Program *p, double x_delta);
+void update_y_position(Program *p, double y_delta);
+void update_x_position(Program *p, double x_delta);
 double deg2rad(double deg);
 void change_direction(Program *p, double new_direction);
-double offset_degree(double deg);
+double validate_degree(double deg);
 double neg_degree_to_pos(double deg);
 double get_delta_y(double direction, double distance);
 double get_delta_x(double direction, double distance);
-void draw_line(Program *p, double y_start, double x_start, double y_end, double x_end);//Bresenham line algorithm
+void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end);//Bresenham line algorithm
 void draw_forward(Program *p, double distance);
+int get_new_y(Program *p, double delta_y);
+int get_new_x(Program *p, double delta_x);
+bool is_y_in_bounds(double y);
+bool is_x_in_bounds(double x);
+void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot);
 
 
 //Test function
