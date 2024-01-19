@@ -114,6 +114,7 @@ bool Fwd(Program *p)
          if(Num(p)){
             if(sscanf(p->wds[p->cw], "%lf", &distance)== 1){
                draw_forward(p, distance);
+               print_grid(p); //is this the right place to print grid?
                printf("calling draw_forward\n");
                return true;
             }
@@ -454,6 +455,7 @@ void change_direction(Program *p, double new_direction)
 {
    double curr_direction = p->curr_direction;
    p->curr_direction = new_direction + curr_direction; 
+   printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
 double validate_degree(double deg)
@@ -629,8 +631,6 @@ void draw_forward(Program *p, double distance)
    }
    update_y_position(p, delta_y);
    update_x_position(p, delta_x);
-   //somewhere (tbd): call print_grid <- think about how to handle neillbusywait 
-   print_grid(p);
 }
 
 //File output 
@@ -704,6 +704,7 @@ bool word_matches(Program *p, char match[MAXTOKENSIZE])
    return false; 
 }
 
+//IMPORTANT: make sure testing doesn't print loads of irrelevant grids /stuff to the screen
 void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
@@ -713,7 +714,7 @@ void test(void)
    // To do: make assert testing exhaustive
 
    //*** INTERPRETING TESTS ***
-   /*
+   
    char tst[ROW_HEIGHT*COL_WIDTH+1];
    
    //empty grid
@@ -751,9 +752,9 @@ void test(void)
 
    //offset_deg
 
-   assert(fabs(offset_degree(-10)-350)<= 0.000001); //-10 deg (less than 0)
-   assert(fabs(offset_degree(-43)-317)<= 0.000001); //-43 deg (less than 0)
-   assert(fabs(offset_degree(-365)-355)<= 0.000001); //-365 deg (less than -360)
+   assert(fabs(validate_degree(-10)-350)<= 0.000001); //-10 deg (less than 0)
+   assert(fabs(validate_degree(-43)-317)<= 0.000001); //-43 deg (less than 0)
+   assert(fabs(validate_degree(-365)-355)<= 0.000001); //-365 deg (less than -360)
 
    //neg_deg_to_pos
    
@@ -775,15 +776,15 @@ void test(void)
 
    //get_new_y 
    prog->curr_y = 10;
-   assert(fabs(get_new_y(prog, 3)-13)<=0.00001);
+   assert(get_new_y(prog, 3)==13);
    prog->curr_y = 13;
-   assert(fabs(get_new_y(prog, 4)-17)<=0.00001);
+   assert(get_new_y(prog, 4)==17);
 
    //get_new_x 
    prog->curr_x = 6;
-   assert(fabs(get_new_x(prog, 3)-9)<=0.00001);
+   assert(get_new_x(prog, 3)==9);
    prog->curr_x = 9;
-   assert(fabs(get_new_x(prog, 5)-14)<=0.00001);
+   assert(get_new_x(prog, 5)==14);
 
    //is_y_in_bounds
    assert(is_y_in_bounds(4)); //in bounds
@@ -1882,7 +1883,7 @@ void test(void)
    //get_arg_filename
 
    //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
-   */
+
    free(prog);
    
 }
