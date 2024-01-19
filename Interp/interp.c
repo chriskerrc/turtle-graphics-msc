@@ -136,6 +136,7 @@ bool Rgt(Program *p)
       if(Varnum(p)){
          if(Num(p)){ //this code is copied from Fwd: make it a function instead
             if(sscanf(p->wds[p->cw], "%lf", &new_direction)== 1){
+               //double valid_direction = validate_degree(new_direction);
                change_direction(p, new_direction);
                printf("calling change direction\n");
                return true;
@@ -394,7 +395,7 @@ void init_turtle(Program *p)
       p->grid[MID_ROW][MID_COL] = WHITE;
       p->curr_y = MID_ROW;
       p->curr_x = MID_COL;
-      p->curr_direction = 0; 
+      p->curr_direction = ROTATE_CONST; 
    }
 }
 
@@ -453,12 +454,13 @@ double deg2rad(double deg)
 
 void change_direction(Program *p, double new_direction)
 {
+   printf("new direction in change dir func %lf\n", new_direction);
    double curr_direction = p->curr_direction;
    p->curr_direction = new_direction + curr_direction; 
    printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
-double validate_degree(double deg)
+double validate_degree(double deg) //not sure where to use this function. trying to do that seems to break things, but not checking this will probably cause bugs...
 {
    double new_angle = 0;
    if(deg > 0 && deg > MAX_ANGLE){
@@ -511,6 +513,7 @@ int get_new_x(Program *p, double delta_x)
 
 //this function is way too long: break it up 
 //line drawing algorithm adapted from .js here https://github.com/anushaihalapathirana/Bresenham-line-drawing-algorithm/blob/master/src/index.js
+//slight bug when line is drawn downwards e.g. for octagon. maybe end points of line are wrong? not just in-between points affected, so need to fix this...
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
    printf("y_start %i\n", y_start);
@@ -606,14 +609,15 @@ bool is_y_in_bounds(double y)
 void draw_forward(Program *p, double distance)
 {
    double raw_direction = p->curr_direction;
-   double valid_direction = validate_degree(raw_direction-ROTATE_CONST);
-   printf("valid direction %lf\n", valid_direction);
+   printf("raw direction %lf\n", raw_direction);
+   //double valid_direction = validate_degree(raw_direction);
+   //printf("valid direction %lf\n", valid_direction);
    int start_y = round(p->curr_y);
    int start_x = round(p->curr_x);
    printf("start y %i\n", start_y);
    printf("start x %i\n", start_x);
-   double delta_x = get_delta_x(valid_direction, distance);
-   double delta_y = get_delta_y(valid_direction, distance);
+   double delta_x = get_delta_x(raw_direction, distance);
+   double delta_y = get_delta_y(raw_direction, distance);
    printf("delta y %lf\n", delta_y);
    printf("delta x %lf\n", delta_x);
    int end_y = get_new_y(p, delta_y);

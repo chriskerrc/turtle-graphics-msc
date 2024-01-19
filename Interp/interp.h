@@ -28,7 +28,7 @@
 #define RAD_CONST 180
 #define MAX_ANGLE 360
 #define ERROR_CONST 2
-#define ROTATE_CONST 90
+#define ROTATE_CONST -90
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
