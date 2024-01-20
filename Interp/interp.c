@@ -1,14 +1,16 @@
 #include "interp.h"
 #include "../neillsimplescreen.c"
 
-//run sanitizer etc 
+//run sanitizer and valgrind 
 //is extremely long line in assert test ok?
 //think about what happens in empty loop: Neill might test for this. for file fail_parse_ok_interp.ttl, make sure you don't stop looking for ENDs after the first one. Need to make sure there's a closing END for each opening LOOP
 //currently my output for donothing.ttl is the turtle in start position, but it should print nothing: only init turtle under certain conditions
 //need to check that output .txt file name is same as input .ttl file (with addition of out_)?
 //should the interpreter run when parsing fails in this file? or only when it succeeds?
 //handle case where direction is more than 360 
-//TO DO: do diff on my txt files vs Neill's to check right number of columns etc. 
+//my implementation of Neill's simple screen is janky: overwrites terminal instructions etc 
+//don't understand how to print error messages for parser or interpreter without flooding terminal with stuff that would get me marked down
+   //should I really "remove testing" that would add stuff to terminal? or is there a better way?
 
 int main(int argc, char *argv[]) //make main function shorter
 {
@@ -527,6 +529,8 @@ int get_new_x(Program *p, double delta_x)
 //this function is way too long: break it up 
 //line drawing algorithm adapted from .js here https://github.com/anushaihalapathirana/Bresenham-line-drawing-algorithm/blob/master/src/index.js
 //slight bug when line is drawn downwards e.g. for octagon. maybe end points of line are wrong? not just in-between points affected, so need to fix this...
+//make this code my own (because I used .js code as pseudocode, and it's C-like)
+//or cite the source?
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
    //printf("y_start %i\n", y_start);
