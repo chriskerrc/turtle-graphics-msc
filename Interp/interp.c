@@ -44,7 +44,6 @@ int main(int argc, char *argv[]) //make main function shorter
       //printf("Parsed OK\n");
       fclose(fpin);
       if(prog->is_text_output==true){
-         printf("hello\n");
          write_file(argv, prog);
       }
       free(prog); 
@@ -59,7 +58,7 @@ int main(int argc, char *argv[]) //make main function shorter
 
 bool Prog(Program *p)
 {
-   neillclrscrn(); //not sure if this is right place to call this. was thinking to call this as early as possible...
+   //neillclrscrn(); //not sure if this is right place to call this. was thinking to call this as early as possible...
    //printf("Prog word: %s\n", p->wds[p->cw]);
    if(!word_matches(p, "START")){
       //ERROR("No START statement ?");
@@ -120,9 +119,9 @@ bool Fwd(Program *p)
             if(sscanf(p->wds[p->cw], "%lf", &distance)== 1){
                draw_forward(p, distance);
                if(p->is_text_output==false){
-                  neillcursorhome();
+                  //neillcursorhome();
                   print_grid_screen(p);
-                  neillbusywait(1.0);
+                  //neillbusywait(1.0);
                }
                //printf("calling draw_forward\n");
                return true;
@@ -508,15 +507,20 @@ double get_delta_x(double direction, double distance)
 }
 
 int get_new_y(Program *p, double delta_y)
-{
-   int new_y = round(p->curr_y + delta_y);
-   return new_y; 
+{  
+   double new_y_double = round(p->curr_y) + delta_y;
+   int new_y_int = round(new_y_double);
+   return new_y_int; 
 }
 
 int get_new_x(Program *p, double delta_x)
 {
-   int new_x = round(p->curr_x + delta_x);
-   return new_x;
+   double new_x_double = p->curr_x + delta_x; //lack of rounding of curr_x (and other rounding) causes discrepancy with Neill's plotting e.g. for octagon
+   //printf("curr_x: %lf\n", p->curr_x);
+   int new_x_int = round(new_x_double);
+   //printf("new_x_double: %lf\n", new_x_double);
+   //printf("new_x_int: %i\n", new_x_int);
+   return new_x_int; 
 }
 
 
