@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) //make main function shorter
       //printf("Parsed OK\n");
       fclose(fpin);
       if(prog->is_text_output==true){
-         write_file;
+         printf("hello\n");
+         write_file(argv, prog);
       }
       free(prog); 
       return EXIT_SUCCESS;
