@@ -29,6 +29,7 @@
 #define MAX_ANGLE 360
 #define ERROR_CONST 2
 #define ROTATE_CONST -90
+#define OUT_FILE 2
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -37,6 +38,7 @@ struct prog{
    double curr_y;
    double curr_x; 
    double curr_direction;
+   bool is_text_output; 
 };
 typedef struct prog Program;
 
@@ -75,7 +77,7 @@ bool word_matches(Program *p, char match[MAXTOKENSIZE]);
 bool empty_area(Program *p);
 void init_turtle(Program *p);
 void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p);
-void print_grid(Program *p);
+void print_grid_screen(Program *p);
 void write_file(char *argv[], Program *p);
 void output_file(FILE* fpout, Program *p);
 void update_y_position(Program *p, double y_delta);

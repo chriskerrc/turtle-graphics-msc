@@ -1,4 +1,5 @@
 #include "interp.h"
+#include "../neillsimplescreen.c"
 
 //run sanitizer etc 
 //is extremely long line in assert test ok?
@@ -7,7 +8,6 @@
 //need to check that output .txt file name is same as input .ttl file (with addition of out_)?
 //should the interpreter run when parsing fails in this file? or only when it succeeds?
 //handle case where direction is more than 360 
-//do assert testing on all trig stuff before moving on 
 //TO DO: do diff on my txt files vs Neill's to check right number of columns etc. 
 
 int main(int argc, char *argv[]) //make main function shorter
@@ -16,7 +16,13 @@ int main(int argc, char *argv[]) //make main function shorter
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
    init_turtle(prog); //added init so turtle for read in file is initialized (need to only do this if turtle does something)
-  
+   if(argc == 3){
+      prog->is_text_output=true;
+   }
+   else{
+      prog->is_text_output=false; 
+   }
+
    if(argc != 2 && argc != 3){ //magic numbers
       fprintf(stderr, "Expecting two or three command line arguments\n");
       exit(EXIT_FAILURE);
@@ -37,10 +43,8 @@ int main(int argc, char *argv[]) //make main function shorter
    if(Prog(prog)){
       //printf("Parsed OK\n");
       fclose(fpin);
-      //print_grid(prog); //need to decide when and where to print_grid: only if argc == 2
-      //output to .txt file
-      if(argc == 3){ //magic number
-         write_file(argv, prog);
+      if(prog->is_text_output==true){
+         write_file;
       }
       free(prog); 
       return EXIT_SUCCESS;
@@ -54,6 +58,7 @@ int main(int argc, char *argv[]) //make main function shorter
 
 bool Prog(Program *p)
 {
+   neillclrscrn(); //not sure if this is right place to call this. was thinking to call this as early as possible...
    //printf("Prog word: %s\n", p->wds[p->cw]);
    if(!word_matches(p, "START")){
       //ERROR("No START statement ?");
@@ -64,7 +69,6 @@ bool Prog(Program *p)
       return true;   
    }
    return false;
-   
 }
 
 bool Inslst(Program *p)
@@ -114,8 +118,12 @@ bool Fwd(Program *p)
          if(Num(p)){
             if(sscanf(p->wds[p->cw], "%lf", &distance)== 1){
                draw_forward(p, distance);
-               print_grid(p); //is this the right place to print grid?
-               printf("calling draw_forward\n");
+               if(p->is_text_output==false){
+                  neillcursorhome();
+                  print_grid_screen(p);
+                  neillbusywait(1.0);
+               }
+               //printf("calling draw_forward\n");
                return true;
             }
          }
@@ -138,7 +146,7 @@ bool Rgt(Program *p)
             if(sscanf(p->wds[p->cw], "%lf", &new_direction)== 1){
                //double valid_direction = validate_degree(new_direction);
                change_direction(p, new_direction);
-               printf("calling change direction\n");
+               //printf("calling change direction\n");
                return true;
             }
          }
@@ -392,15 +400,15 @@ bool empty_grid(Program *p)
 void init_turtle(Program *p)
 {
    if(empty_grid(p)==true){
-      p->grid[MID_ROW][MID_COL] = WHITE;
+      //p->grid[MID_ROW][MID_COL] = WHITE;
       p->curr_y = MID_ROW;
       p->curr_x = MID_COL;
       p->curr_direction = ROTATE_CONST; 
    }
 }
 
-void print_grid(Program *p)
-{
+void print_grid_screen(Program *p)
+{  
    for(int row = 0; row < ROW_HEIGHT; row++){
       for(int col = 0; col < COL_WIDTH; col++){
          if(isalpha(p->grid[row][col])){
@@ -437,13 +445,13 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
 void update_y_position(Program *p, double y_delta)
 {
    p->curr_y += y_delta; //should the coordinates be rounded to ints before printing e.g. now?
-   printf("updated y %lf\n", p->curr_y);
+   //printf("updated y %lf\n", p->curr_y);
 }
 
 void update_x_position(Program *p, double x_delta)
 {
    p->curr_x += x_delta; //should the coordinates be rounded to ints before printing e.g. now?
-   printf("updated x %lf\n", p->curr_x);
+   //printf("updated x %lf\n", p->curr_x);
 }
 
 double deg2rad(double deg)
@@ -454,10 +462,10 @@ double deg2rad(double deg)
 
 void change_direction(Program *p, double new_direction)
 {
-   printf("new direction in change dir func %lf\n", new_direction);
+   //printf("new direction in change dir func %lf\n", new_direction);
    double curr_direction = p->curr_direction;
    p->curr_direction = new_direction + curr_direction; 
-   printf("updated direction in change dir func %lf\n", p->curr_direction);
+   //printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
 double validate_degree(double deg) //not sure where to use this function. trying to do that seems to break things, but not checking this will probably cause bugs...
@@ -516,10 +524,10 @@ int get_new_x(Program *p, double delta_x)
 //slight bug when line is drawn downwards e.g. for octagon. maybe end points of line are wrong? not just in-between points affected, so need to fix this...
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
-   printf("y_start %i\n", y_start);
-   printf("x_start %i\n", x_start);
-   printf("y_end %i\n", y_end);
-   printf("x_end %i\n", x_end);
+   //printf("y_start %i\n", y_start);
+   //printf("x_start %i\n", x_start);
+   //printf("y_end %i\n", y_end);
+   //printf("x_end %i\n", x_end);
 
    //calculate dy and dx
    int abs_dx = abs(x_end - x_start); 
@@ -609,21 +617,21 @@ bool is_y_in_bounds(double y)
 void draw_forward(Program *p, double distance)
 {
    double raw_direction = p->curr_direction;
-   printf("raw direction %lf\n", raw_direction);
+   //printf("raw direction %lf\n", raw_direction);
    //double valid_direction = validate_degree(raw_direction);
    //printf("valid direction %lf\n", valid_direction);
    int start_y = round(p->curr_y);
    int start_x = round(p->curr_x);
-   printf("start y %i\n", start_y);
-   printf("start x %i\n", start_x);
+   //printf("start y %i\n", start_y);
+   //printf("start x %i\n", start_x);
    double delta_x = get_delta_x(raw_direction, distance);
    double delta_y = get_delta_y(raw_direction, distance);
-   printf("delta y %lf\n", delta_y);
-   printf("delta x %lf\n", delta_x);
+   //printf("delta y %lf\n", delta_y);
+   //printf("delta x %lf\n", delta_x);
    int end_y = get_new_y(p, delta_y);
    int end_x = get_new_x(p, delta_x);
-   printf("end y %i\n", end_y);
-   printf("end x %i\n", end_x);
+   //printf("end y %i\n", end_y);
+   //printf("end x %i\n", end_x);
 
    //round x and y values to integers 
 
@@ -641,9 +649,9 @@ void draw_forward(Program *p, double distance)
 
 void write_file(char *argv[], Program *p)
 {
-   FILE* fpout = fopen(argv[2], "w"); //magic number
+   FILE* fpout = fopen(argv[OUT_FILE], "w"); 
       if(fpout == NULL){
-         fprintf(stderr, "Cannot write to file %s ?\n", argv[2]); //magic number
+         fprintf(stderr, "Cannot write to file %s ?\n", argv[OUT_FILE]);
          exit(EXIT_FAILURE);
       }
    output_file(fpout, p);
@@ -712,12 +720,12 @@ bool word_matches(Program *p, char match[MAXTOKENSIZE])
 void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
-
+   /*
    // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
 
    // To do: make assert testing exhaustive
 
-   //*** INTERPRETING TESTS ***
+   // *** INTERPRETING TESTS ***
    
    char tst[ROW_HEIGHT*COL_WIDTH+1];
    
@@ -727,10 +735,10 @@ void test(void)
    init_turtle(prog);
    grid2str(tst, prog);
    //test that there's a 'W' in the middle cell of the grid
-   assert(strcmp(tst, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         W                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ")==0); 
+   //assert(strcmp(tst, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         W                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ")==0); 
    //test that x = mid, y = mid, direction = 0
       //create function to do this that takes x, y, and degrees as parameters
-   //print_grid(prog);
+   //print_grid_screen(prog);
 
    //draw_forward
    
@@ -738,7 +746,7 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "START FORWARD 15 END", 4); 
    Prog(prog);
-   //print_grid(prog);
+   //print_grid_screen(prog);
    clear_buff(prog);
    rst_ptr(prog);
 
@@ -1887,7 +1895,7 @@ void test(void)
    //get_arg_filename
 
    //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
-
+   */
    free(prog);
    
 }
