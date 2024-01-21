@@ -23,6 +23,13 @@
 #define MID_COL 25
 #define MID_ROW 16
 #define WHITE 'W'
+#define RED 'R'
+#define BLUE 'B'
+#define BLACK 'K'
+#define YELLOW 'Y'
+#define MAGENTA 'M'
+#define CYAN 'C'
+#define GREEN 'G'
 #define SPACE ' '
 #define PI 3.14159265358979323846
 #define RAD_CONST 180
@@ -39,6 +46,7 @@ struct prog{
    double curr_x; 
    double curr_direction;
    bool is_text_output; 
+   char colour; 
 };
 typedef struct prog Program;
 
@@ -95,6 +103,10 @@ int get_new_x(Program *p, double delta_x);
 bool is_y_in_bounds(double y);
 bool is_x_in_bounds(double x);
 void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot);
+bool word_is_colour(Program *p);
+void set_colour(Program *p, char col);
+char get_colour(Program *p);
+int char2col(char col);
 
 
 //Test function

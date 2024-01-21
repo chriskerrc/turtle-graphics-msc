@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) //make main function shorter
 
 bool Prog(Program *p)
 {
-   //neillclrscrn(); //not sure if this is right place to call this. was thinking to call this as early as possible...
+   neillclrscrn(); //not sure if this is right place to call this. was thinking to call this as early as possible...
    //printf("Prog word: %s\n", p->wds[p->cw]);
    if(!word_matches(p, "START")){
       //ERROR("No START statement ?");
@@ -121,9 +121,13 @@ bool Fwd(Program *p)
             if(sscanf(p->wds[p->cw], "%lf", &distance)== 1){
                draw_forward(p, distance);
                if(p->is_text_output==false){
-                  //neillcursorhome();
+                  //put this stuff in a wrapper function
+                  neillcursorhome();
+                  char col = get_colour(p);
+                  int ansi = char2col(col);
+                  neillfgcol(ansi);
                   print_grid_screen(p);
-                  //neillbusywait(1.0);
+                  neillbusywait(1.0);
                }
                //printf("calling draw_forward\n");
                return true;
@@ -406,6 +410,7 @@ void init_turtle(Program *p)
       p->curr_y = MID_ROW;
       p->curr_x = MID_COL;
       p->curr_direction = ROTATE_CONST; 
+      set_colour(p, WHITE);
    }
 }
 
@@ -603,8 +608,9 @@ void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 }
 
 void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot)
-{
-   p->grid[curr_y_plot][curr_x_plot] = WHITE;
+{  
+   char curr_col = get_colour(p);
+   p->grid[curr_y_plot][curr_x_plot] = curr_col;
 }
 
 bool is_x_in_bounds(double x)
@@ -682,6 +688,89 @@ void output_file(FILE* fpout, Program *p)
    }
 }
 
+//Colour 
+
+void set_colour(Program *p, char col)
+{
+   p->colour = col; 
+}
+
+bool word_is_colour(Program *p) //make this function shorter
+{
+   if(word_matches(p, "RED")){
+      set_colour(p, RED);
+      return true;
+   }
+   if(word_matches(p, "BLACK")){
+      set_colour(p, BLACK);
+      return true;
+   }
+   if(word_matches(p, "GREEN")){
+      set_colour(p, GREEN);
+      return true;
+   }
+   if(word_matches(p, "BLUE")){
+      set_colour(p, BLUE);
+      return true;
+   }
+   if(word_matches(p, "YELLOW")){
+      set_colour(p, YELLOW);
+      return true;
+   }
+   if(word_matches(p, "CYAN")){
+      set_colour(p, CYAN);
+      return true;
+   }
+   if(word_matches(p, "MAGENTA")){
+      set_colour(p, MAGENTA);
+      return true;
+   }
+   if(word_matches(p, "WHITE")){
+      set_colour(p, WHITE);
+      return true;
+   }
+   return false; 
+}
+
+char get_colour(Program *p)
+{
+   char col = ' ';
+   col = p->colour;
+   return col; 
+}
+
+int char2col(char col)
+{
+   int colour_code = 0;
+   switch (col) {
+      case 'R':
+         colour_code = red;
+         break;
+      case 'B':
+         colour_code = blue;
+         break;
+      case 'K':
+         colour_code = black;
+         break;
+      case 'C':
+         colour_code = cyan;
+         break;
+      case 'Y':
+         colour_code = yellow;
+         break;
+      case 'G':
+         colour_code = green;
+         break;
+      case 'M':
+         colour_code = magenta;
+         break;
+      case 'W':
+         colour_code = white;
+         break;
+   }
+   return colour_code;
+}
+
 //HELPER FUNCTIONS
 
 void clear_buff(Program *p)
@@ -729,14 +818,32 @@ bool word_matches(Program *p, char match[MAXTOKENSIZE])
 void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
-   /*
+   
    // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
 
    // To do: make assert testing exhaustive
-
+   char tst[ROW_HEIGHT*COL_WIDTH+1];
    // *** INTERPRETING TESTS ***
    
-   char tst[ROW_HEIGHT*COL_WIDTH+1];
+   //word_is_colour
+   str2buff(prog, "RED", 1); //red 
+   assert(word_is_colour(prog));
+   str2buff(prog, "YELLOW", 1); //yellow
+   assert(word_is_colour(prog));
+   str2buff(prog, "BLUE", 1); //blue
+   assert(word_is_colour(prog));
+   str2buff(prog, "GREEN", 1); //green
+   assert(word_is_colour(prog));
+   str2buff(prog, "MAGENTA", 1); //magenta
+   assert(word_is_colour(prog));
+   str2buff(prog, "BLACK", 1); //black
+   assert(word_is_colour(prog));
+   str2buff(prog, "CYAN", 1); //cyan
+   assert(word_is_colour(prog));
+   str2buff(prog, "ORANGE", 1); //orange (not a valid colour)
+   assert(!word_is_colour(prog));
+  
+  
    
    //empty grid
 
@@ -758,7 +865,7 @@ void test(void)
    //print_grid_screen(prog);
    clear_buff(prog);
    rst_ptr(prog);
-
+ /*
    //deg2rad
 
    assert(fabs(deg2rad(90)-1.570796)<= 0.000001); //90 deg
@@ -816,7 +923,6 @@ void test(void)
    assert(is_y_in_bounds(7)); //in bounds
    assert(!is_y_in_bounds(51)); //over bounds
    assert(!is_y_in_bounds(-1)); //below bounds
-
 
    // *** PARSING TESTS ***
 
@@ -1033,7 +1139,7 @@ void test(void)
    assert(Rgt(prog)==false);
 
    //Fwd
-
+   
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "FORWARD 10", 2); //valid Num
@@ -1073,7 +1179,7 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "FORWARD d.99", 2); //not a double
    assert(Fwd(prog)==false);
-   
+  
    //Inslst
 
    clear_buff(prog);
@@ -1298,6 +1404,8 @@ void test(void)
    str2buff(prog, "LOOP $Q OVER { 20 }", 6); // missing END (no Inslst)
    assert(over_lst_inslst(prog)==false);
 
+   
+   
    //Var 
 
    clear_buff(prog);
