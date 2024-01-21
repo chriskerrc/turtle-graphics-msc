@@ -37,6 +37,8 @@
 #define ERROR_CONST 2
 #define ROTATE_CONST -90
 #define OUT_FILE 2
+#define A_TO_Z 25
+#define BASE_LETTER 'A'
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
@@ -49,6 +51,18 @@ struct prog{
    char colour; 
 };
 typedef struct prog Program;
+
+enum var_data_type {NUMBER, STRING};
+typedef enum var_data_type var_data_type; 
+
+struct var{
+   var_data_type type; 
+   union { 
+      double num; 
+      char* colour; 
+   } data; 
+};
+typedef struct var Variable; 
 
 char str[ROW_HEIGHT*COL_WIDTH+1];
 
@@ -107,7 +121,7 @@ bool word_is_colour(Program *p);
 void set_colour(Program *p, char col);
 char get_colour(Program *p);
 int char2col(char col);
-
+int char2index(char letter);
 
 //Test function
 void test(void);

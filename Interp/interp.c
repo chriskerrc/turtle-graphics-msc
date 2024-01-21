@@ -9,8 +9,9 @@
 //should the interpreter run when parsing fails in this file? or only when it succeeds?
 //handle case where direction is more than 360 
 //my implementation of Neill's simple screen is janky: overwrites terminal instructions etc 
-//don't understand how to print error messages for parser or interpreter without flooding terminal with stuff that would get me marked down
-   //should I really "remove testing" that would add stuff to terminal? or is there a better way?
+//add a flag to switch off testing for production 
+//add meaningful error messages to interpreter and parser 
+//make interpreter fail for invalid colour "ORANGE" etc. 
 
 int main(int argc, char *argv[]) //make main function shorter
 {
@@ -41,6 +42,9 @@ int main(int argc, char *argv[]) //make main function shorter
       //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
+
+   Variable var[A_TO_Z]; //defining array of structs with unions inside to store variable values
+   var[0].type = NUMBER;
 
    if(Prog(prog)){
       //printf("Parsed OK\n");
@@ -321,7 +325,7 @@ bool Items(Program *p)
    return false; 
 }
 
-bool Set(Program *p)
+bool Set(Program *p) //add code to read number and store it in array of Variable structs at correct index
 { 
    if(word_matches(p, "SET")){
       next_word(p);
@@ -771,6 +775,14 @@ int char2col(char col)
    return colour_code;
 }
 
+//set 
+
+int char2index(char letter)
+{
+   int index = letter - BASE_LETTER;
+   return index; 
+}
+
 //HELPER FUNCTIONS
 
 void clear_buff(Program *p)
@@ -843,7 +855,11 @@ void test(void)
    str2buff(prog, "ORANGE", 1); //orange (not a valid colour)
    assert(!word_is_colour(prog));
   
-  
+   //char2index
+   assert(char2index('A')==0);
+   assert(char2index('B')==1);
+   assert(char2index('Y')==24);
+   assert(char2index('Z')==25);
    
    //empty grid
 
