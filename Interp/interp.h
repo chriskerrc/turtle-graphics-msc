@@ -40,6 +40,18 @@
 #define A_TO_Z 25
 #define BASE_LETTER 'A'
 
+enum var_data_type {NUMBER, STRING};
+typedef enum var_data_type var_data_type; 
+
+struct var{                 
+   var_data_type type; 
+   union { 
+      double num; 
+      char* colour; 
+   } data; 
+};
+typedef struct var variable;
+
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
    int cw; // Current Word <-rename to something readable
@@ -49,20 +61,10 @@ struct prog{
    double curr_direction;
    bool is_text_output; 
    char colour; 
+   int active_var_index; 
+   variable vars[A_TO_Z];
 };
 typedef struct prog Program;
-
-enum var_data_type {NUMBER, STRING};
-typedef enum var_data_type var_data_type; 
-
-struct var{
-   var_data_type type; 
-   union { 
-      double num; 
-      char* colour; 
-   } data; 
-};
-typedef struct var Variable; 
 
 char str[ROW_HEIGHT*COL_WIDTH+1];
 
@@ -122,6 +124,9 @@ void set_colour(Program *p, char col);
 char get_colour(Program *p);
 int char2col(char col);
 int char2index(char letter);
+void set_active_var_index(Program *p);
+int get_active_var_index(Program *p);
+void set_val_active_var(Program *p, double val);
 
 //Test function
 void test(void);

@@ -1,5 +1,8 @@
 #include "interp.h"
-#include "../neillsimplescreen.c"
+#include "../neillsimplescreen.c" //don't know if I should be including C files 
+#include "./neills_stack/stack.h"
+#include "./neills_stack/general.c"
+#include "./neills_stack/specific.h"
 
 //run sanitizer and valgrind 
 //is extremely long line in assert test ok?
@@ -15,7 +18,11 @@
 
 int main(int argc, char *argv[]) //make main function shorter
 {
-   test();
+   bool run_tests = true; //put this in prog struct or something 
+   if(run_tests == true){
+      test();
+   }
+   
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
    init_turtle(prog); //added init so turtle for read in file is initialized (need to only do this if turtle does something)
@@ -42,9 +49,6 @@ int main(int argc, char *argv[]) //make main function shorter
       //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
-
-   Variable var[A_TO_Z]; //defining array of structs with unions inside to store variable values
-   var[0].type = NUMBER;
 
    if(Prog(prog)){
       //printf("Parsed OK\n");
@@ -330,6 +334,9 @@ bool Set(Program *p) //add code to read number and store it in array of Variable
    if(word_matches(p, "SET")){
       next_word(p);
       if(Ltr(p, NO_VAR_CALL)){
+         set_active_var_index(p);
+         //int index = get_active_var_index(p);
+         //printf("Index in set func %i\n", index);
          next_word(p);
          if(brace_then_pfix(p)){
             return true;
@@ -783,6 +790,113 @@ int char2index(char letter)
    return index; 
 }
 
+//Neill's stack https://github.com/csnwc/ADTs/tree/main/Stack
+
+stack* stack_init(void)
+{
+   stack *s = (stack*) ncalloc(1, sizeof(stack));
+   /* Some implementations would allow you to pass
+      a hint about the initial size of the stack */
+   s->a = (stacktype*) ncalloc(FIXEDSIZE, sizeof(stacktype));
+   s->size = 0;
+   s->capacity= FIXEDSIZE;
+   return s;
+}
+
+void stack_push(stack* s, stacktype d)
+{
+   if(s==NULL){
+       return;
+   }
+   if(s->size >= s->capacity){
+      s->a = (stacktype*) nremalloc(s->a,
+             sizeof(stacktype)*s->capacity*SCALEFACTOR);
+      s->capacity = s->capacity*SCALEFACTOR;
+   }
+   s->a[s->size] = d;
+   s->size = s->size + 1;
+}
+
+bool stack_pop(stack* s, stacktype* d)
+{
+   if((s == NULL) || (s->size < 1)){
+      return false;
+   }
+   s->size = s->size - 1;
+   *d = s->a[s->size];
+   return true;
+}
+
+bool stack_peek(stack* s, stacktype* d)
+{
+   if((s==NULL) || (s->size <= 0)){
+      /* Stack is Empty */
+      return false;
+   }
+   *d = s->a[s->size-1];
+   return true;
+}
+
+void stack_tostring(stack* s, char* str)
+{
+   char tmp[ELEMSIZE];
+   str[0] = '\0';
+   if((s==NULL) || (s->size <1)){
+      return;
+   }
+   for(int i=s->size-1; i>=0; i--){
+      sprintf(tmp, FORMATSTR, s->a[i]); 
+      strcat(str, tmp);
+      strcat(str, "|");
+   }
+   str[strlen(str)-1] = '\0';
+}
+
+bool stack_free(stack* s)
+{
+   if(s==NULL){
+      return true;
+   }
+   free(s->a);
+   free(s);
+   return true;
+}
+
+//end of Neill's stack functions 
+
+void set_active_var_index(Program *p)
+{  
+   char c = p->wds[p->cw][0]; //get first (and only) char of current word 
+   printf("char %c\n",c);
+   int index = char2index(c);
+   printf("index %i\n",index);
+   p->active_var_index = index;
+}
+
+int get_active_var_index(Program *p)
+{
+   int index = p->active_var_index;
+   return index; 
+}
+
+void set_val_active_var(Program *p, double val) //get value to give to this function off top of stack 
+{
+   int index = get_active_var_index(p);
+   p->vars[index].type = NUMBER; //assuming number for now (handle colour later)
+   p->vars[index].data.num = val; //set variable with active var index to val  
+   val = 0; //says it's unused otherwise :(
+}
+
+double get_val_active_var(Program *p)
+{
+   int index = get_active_var_index(p);
+   double val = -1;
+   if(p->vars[index].type == NUMBER){
+       val = p->vars[index].data.num;
+   }
+   return val; 
+}
+
 //HELPER FUNCTIONS
 
 void clear_buff(Program *p)
@@ -881,7 +995,7 @@ void test(void)
    //print_grid_screen(prog);
    clear_buff(prog);
    rst_ptr(prog);
- /*
+ 
    //deg2rad
 
    assert(fabs(deg2rad(90)-1.570796)<= 0.000001); //90 deg
@@ -939,6 +1053,43 @@ void test(void)
    assert(is_y_in_bounds(7)); //in bounds
    assert(!is_y_in_bounds(51)); //over bounds
    assert(!is_y_in_bounds(-1)); //below bounds
+
+   //set_active_var_index & get_active_var_index 
+
+   str2buff(prog,"A ( 1 )", 4); //Letter A has index 1
+   set_active_var_index(prog);
+   assert(get_active_var_index(prog)==0);
+   rst_ptr(prog);
+   clear_buff(prog); 
+
+   str2buff(prog,"K ( 1 )", 4); //Letter K has index 10
+   set_active_var_index(prog);
+   assert(get_active_var_index(prog)==10);
+   rst_ptr(prog);
+   clear_buff(prog); 
+
+   str2buff(prog,"Z ( 1 )", 4); //Letter Z has index 25
+   set_active_var_index(prog);
+   assert(get_active_var_index(prog)==25);
+   rst_ptr(prog);
+   clear_buff(prog); 
+
+   //set_val_active_var & get_val_active_var
+
+   str2buff(prog,"A ( 1 )", 4); //Letter A has index 1
+   set_active_var_index(prog);
+   set_val_active_var(prog, 1); //set A to 1 
+   assert(fabs(get_val_active_var(prog)-1)<=0.00001); //get value of A
+   rst_ptr(prog);
+   clear_buff(prog); 
+
+   str2buff(prog,"B ( 1 )", 4); //Letter A has index 2
+   set_active_var_index(prog);
+   set_val_active_var(prog, 17.99); //set B to 17.99
+   assert(fabs(get_val_active_var(prog)-17.99)<=0.00001); //get value of B
+   rst_ptr(prog);
+   clear_buff(prog); 
+
 
    // *** PARSING TESTS ***
 
@@ -2028,7 +2179,7 @@ void test(void)
    //get_arg_filename
 
    //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
-   */
+   
    free(prog);
    
 }
