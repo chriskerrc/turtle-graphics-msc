@@ -888,7 +888,7 @@ void set_val_var(Program *p, double val, int index)
 {
    p->vars[index].type = NUMBER; //assuming number for now (handle colour later)
    p->vars[index].data.num = val; //set variable[index] to val
-   val = 0; //says it's unused otherwise :(
+   //val = 0; //says it's unused otherwise :(
 }
 
 double get_val_var(Program *p, int index)
@@ -1161,20 +1161,32 @@ void test(void)
    
    //set_val_var & get_val_var
 
-   str2buff(prog,"A ( 1 )", 4); //Letter A has index 1
    int index = char2index('A');
    set_val_var(prog, 1, index); //set A to 1 
    assert(fabs(get_val_var(prog, index)-1)<=0.00001); //get value of A
-   rst_ptr(prog);
-   clear_buff(prog); 
 
-   str2buff(prog,"Z ( 17.99 )", 4); //Letter B has index 25
+   set_val_var(prog, 5, index); //reset A to 5
+   assert(fabs(get_val_var(prog, index)-5)<=0.00001); //get new value of A
+
    index = char2index('Z');
    set_val_var(prog, 17.99, index); //set Z to 17.99
    assert(fabs(get_val_var(prog, index)-17.99)<=0.00001); //get value of Z
-   rst_ptr(prog);
-   clear_buff(prog); 
 
+   //set1.ttl 
+   str2buff(prog,"START SET A ( 1 ) END", 7); 
+   Prog(prog);
+   assert(fabs(get_val_var(prog, 0)-1)<=0.00001); //check A is set to 3
+   rst_ptr(prog);
+   clear_buff(prog);
+
+   //set2.ttl
+   str2buff(prog,"START SET A ( 0 ) SET B ( $A 1 + ) SET C ( $B 2 * ) END", 21); 
+   Prog(prog);
+   assert(fabs(get_val_var(prog, 0)-0)<=0.00001); //check A is set to 0
+   assert(fabs(get_val_var(prog, 1)-1)<=0.00001); //check B is set to 1 (= 0 + 1)
+   assert(fabs(get_val_var(prog, 2)-2)<=0.00001); //check C is set to 2 (= 1 * 2)
+   rst_ptr(prog);
+   clear_buff(prog);
 
    // *** PARSING TESTS ***
 
