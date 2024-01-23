@@ -114,7 +114,6 @@ struct prog{
    double curr_direction;
    bool is_text_output; 
    char colour; 
-   int active_var_index; 
    variable vars[A_TO_Z];
 };
 typedef struct prog Program;
@@ -178,13 +177,12 @@ void set_colour(Program *p, char col);
 char get_colour(Program *p);
 int char2col(char col);
 int char2index(char letter);
-void set_active_var_index(Program *p);
-int get_active_var_index(Program *p);
-void set_val_active_var(Program *p, double val);
-double get_val_active_var(Program *p);
 void calc_binary_expression(Program *p, stack *s);
-char get_operator(Program *p);
+char get_char(Program *p);
 char var2letter(Program *p);
+void set_val_var(Program *p, double val, int index);
+double get_val_var(Program *p, int index);
+char get_letter(Program *p);
 
 //Test function
 void test(void);

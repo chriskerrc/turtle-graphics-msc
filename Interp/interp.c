@@ -286,9 +286,11 @@ bool Col(Program *p)
    return false;
 }
 
-bool Pfix(Program *p, stack *s)
+bool Pfix(Program *p, stack *s) //make this function shorter
 {
    double num = -1; 
+   char letter = 0;
+   int var_index = 0;
    //if word is ")", return true and don't increment p
    if(word_matches(p, ")")){
       return true;
@@ -308,13 +310,12 @@ bool Pfix(Program *p, stack *s)
                stack_push(s, num);
             }
          }
-         if(Var(p)){
-            //convert var to index
-            //get letter from var 
-            //put it through char2index
-            num = -1 ; //remove this
+         if(Var(p)){ //this assumes var is a number, not a colour
+            letter = var2letter(p);
+            var_index = char2index(letter);
+            num = get_val_var(p, var_index);
+            stack_push(s, num);
          }
-         //if var, get value, push number to stack
          next_word(p);
          if(Pfix(p, s)){
             return true;
@@ -341,21 +342,20 @@ bool Items(Program *p)
 
 bool Set(Program *p) //add code to read number and store it in array of Variable structs at correct index
 { 
-   //initialise stack
+   double num = -1;
+   int var_index; 
+   char letter = 0;
    stack *pfix_stack;
    pfix_stack = stack_init();
    if(word_matches(p, "SET")){
       next_word(p);
       if(Ltr(p, NO_VAR_CALL)){
-         set_active_var_index(p);
-         //int index = get_active_var_index(p);
-         //printf("Index in set func %i\n", index);
+         letter = get_char(p);
+         var_index = char2index(letter);
          next_word(p);
-         if(brace_then_pfix(p, pfix_stack)){
-            //pop top of stack
-
-            //set active variable to this value
-         
+         if(brace_then_pfix(p, pfix_stack)){ //assuming that var can only be number, not colour for now 
+            stack_pop(pfix_stack, &num); //get result of pfix expression from top of stack 
+            set_val_var(p, num, var_index); //set var to result
             stack_free(pfix_stack);
             return true;
          }
@@ -884,32 +884,15 @@ bool stack_free(stack* s)
 
 //end of Neill's stack functions 
 
-void set_active_var_index(Program *p)
-{  
-   char c = p->wds[p->cw][0]; //get first (and only) char of current word 
-   printf("char %c\n",c);
-   int index = char2index(c);
-   printf("index %i\n",index);
-   p->active_var_index = index;
-}
-
-int get_active_var_index(Program *p)
+void set_val_var(Program *p, double val, int index)
 {
-   int index = p->active_var_index;
-   return index; 
-}
-
-void set_val_active_var(Program *p, double val) //get value to give to this function off top of stack 
-{
-   int index = get_active_var_index(p);
    p->vars[index].type = NUMBER; //assuming number for now (handle colour later)
-   p->vars[index].data.num = val; //set variable with active var index to val  
+   p->vars[index].data.num = val; //set variable[index] to val
    val = 0; //says it's unused otherwise :(
 }
 
-double get_val_active_var(Program *p)
+double get_val_var(Program *p, int index)
 {
-   int index = get_active_var_index(p);
    double val = -1;
    if(p->vars[index].type == NUMBER){
        val = p->vars[index].data.num;
@@ -920,7 +903,7 @@ double get_val_active_var(Program *p)
 //adapted from Neill's https://github.com/csnwc/ADTs/blob/main/Stack/postfix.c
 void calc_binary_expression(Program *p, stack *s)
 {
-   char op = get_operator(p);
+   char op = get_char(p);
    double top, top_minus_1, result; 
    stack_pop(s, &top);
    stack_pop(s, &top_minus_1);
@@ -944,11 +927,12 @@ void calc_binary_expression(Program *p, stack *s)
    stack_push(s, result);
 }
 
-char get_operator(Program *p)
+char get_char(Program *p)
 {
-   char op = p->wds[p->cw][0]; 
-   return op; 
+   char c = p->wds[p->cw][0]; 
+   return c; 
 }
+
 
 char var2letter(Program *p)
 {
@@ -1011,17 +995,17 @@ void test(void)
    // *** INTERPRETING TESTS ***
 
 
-   //get_operator 
+   //get_char
    
    clear_buff(prog);
    str2buff(prog, "+", 1);
-   assert(get_operator(prog)=='+');
+   assert(get_char(prog)=='+');
    str2buff(prog, "-", 1);
-   assert(get_operator(prog)=='-');
+   assert(get_char(prog)=='-');
    str2buff(prog, "*", 1);
-   assert(get_operator(prog)=='*');
+   assert(get_char(prog)=='*');
    str2buff(prog, "/", 1);
-   assert(get_operator(prog)=='/');
+   assert(get_char(prog)=='/');
    clear_buff(prog);
 
    //double calc_binary_expression
@@ -1068,6 +1052,10 @@ void test(void)
    //var2letter
    str2buff(prog, "$A", 1);
    assert(var2letter(prog)=='A');
+   str2buff(prog, "$M", 1);
+   assert(var2letter(prog)=='M');
+   str2buff(prog, "$Z", 1);
+   assert(var2letter(prog)=='Z');
 
    //word_is_colour
    str2buff(prog, "RED", 1); //red 
@@ -1172,41 +1160,22 @@ void test(void)
    assert(!is_y_in_bounds(51)); //over bounds
    assert(!is_y_in_bounds(-1)); //below bounds
 
-   //set_active_var_index & get_active_var_index 
+   //set_val_var & get_val_var
 
    str2buff(prog,"A ( 1 )", 4); //Letter A has index 1
-   set_active_var_index(prog);
-   assert(get_active_var_index(prog)==0);
-   rst_ptr(prog);
-   clear_buff(prog); 
-
-   str2buff(prog,"K ( 1 )", 4); //Letter K has index 10
-   set_active_var_index(prog);
-   assert(get_active_var_index(prog)==10);
-   rst_ptr(prog);
-   clear_buff(prog); 
-
-   str2buff(prog,"Z ( 1 )", 4); //Letter Z has index 25
-   set_active_var_index(prog);
-   assert(get_active_var_index(prog)==25);
-   rst_ptr(prog);
-   clear_buff(prog); 
-
-   //set_val_active_var & get_val_active_var
-
-   str2buff(prog,"A ( 1 )", 4); //Letter A has index 1
-   set_active_var_index(prog);
-   set_val_active_var(prog, 1); //set A to 1 
-   assert(fabs(get_val_active_var(prog)-1)<=0.00001); //get value of A
+   int index = char2index('A');
+   set_val_var(prog, 1, index); //set A to 1 
+   assert(fabs(get_val_var(prog, index)-1)<=0.00001); //get value of A
    rst_ptr(prog);
    clear_buff(prog); 
 
    str2buff(prog,"B ( 1 )", 4); //Letter B has index 2
-   set_active_var_index(prog);
-   set_val_active_var(prog, 17.99); //set B to 17.99
-   assert(fabs(get_val_active_var(prog)-17.99)<=0.00001); //get value of B
+   index = char2index('B');
+   set_val_var(prog, 17.99, index); //set B to 17.99
+   assert(fabs(get_val_var(prog, index)-17.99)<=0.00001); //get value of B
    rst_ptr(prog);
    clear_buff(prog); 
+
 
 
    // *** PARSING TESTS ***
