@@ -13,6 +13,9 @@
 //add a flag to switch off testing for production 
 //add meaningful error messages to interpreter and parser 
 //make interpreter fail for invalid colour "ORANGE" etc. 
+//make interpreter exit gracefully if stack underflow/overflow! 
+
+//important: enable setting var to colour e.g. $A = WHITE. This is needed for tunnel, labyrinth, hypno, downarrow, 5x5
 
 int main(int argc, char *argv[]) //make main function shorter
 {
