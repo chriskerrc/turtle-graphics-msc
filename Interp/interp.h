@@ -41,6 +41,8 @@
 #define OUT_FILE 2
 #define A_TO_Z 25
 #define BASE_LETTER 'A'
+
+//TO DO: put Neill's stuff in different header file if possible 
 //Neill's stack (specific.h)
 #define MAXINPUT 1000
 #define FORMATSTR "%i"
@@ -50,9 +52,9 @@
 #define SCALEFACTOR 2
 
 //Neill's stack (stack.h)
-typedef double stacktype;
 
 typedef struct stack stack;
+typedef double stacktype;
 
 /* Create an empty stack */
 stack* stack_init(void);
@@ -80,6 +82,16 @@ void* nrecalloc(void* p, int oldsz, int newsz);
 void* nremalloc(void* p, int bytes);
 void* nfopen(char* fname, char* mode);
 
+//Neill's 
+
+struct stack {
+   /* Underlying array */
+   stacktype* a;
+   int size;
+   int capacity;
+};
+
+//my stuff again 
 
 enum var_data_type {NUMBER, STRING};
 typedef enum var_data_type var_data_type; 
@@ -108,13 +120,6 @@ struct prog{
 typedef struct prog Program;
 
 char str[ROW_HEIGHT*COL_WIDTH+1];
-
-struct stack {
-   /* Underlying array */
-   stacktype* a;
-   int size;
-   int capacity;
-};
 
 
 //Parser grammar functions
@@ -176,6 +181,10 @@ int char2index(char letter);
 void set_active_var_index(Program *p);
 int get_active_var_index(Program *p);
 void set_val_active_var(Program *p, double val);
+double get_val_active_var(Program *p);
+void calc_binary_expression(Program *p, stack *s);
+char get_operator(Program *p);
+char var2letter(Program *p);
 
 //Test function
 void test(void);

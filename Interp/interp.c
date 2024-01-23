@@ -288,15 +288,14 @@ bool Col(Program *p)
 
 bool Pfix(Program *p, stack *s)
 {
+   double num = -1; 
    //if word is ")", return true and don't increment p
    if(word_matches(p, ")")){
       return true;
    }
    
    if(Op(p)){
-      //pop top two values from stack
-      //evaluate result - need new function for this
-      //push result to stack
+      calc_binary_expression(p, s);
       next_word(p);
       if(Pfix(p, s)){
          return true;
@@ -304,7 +303,17 @@ bool Pfix(Program *p, stack *s)
    }
    else{
       if(Varnum(p)){
-         //if num, push number to stack
+         if(Num(p)){
+            if(sscanf(p->wds[p->cw], "%lf", &num)== 1){ //ideally make this a function rather than copying and pasting it around 
+               stack_push(s, num);
+            }
+         }
+         if(Var(p)){
+            //convert var to index
+            //get letter from var 
+            //put it through char2index
+            num = -1 ; //remove this
+         }
          //if var, get value, push number to stack
          next_word(p);
          if(Pfix(p, s)){
@@ -312,7 +321,6 @@ bool Pfix(Program *p, stack *s)
          }
       }
    } 
-   
    return false;
 }
 
@@ -347,8 +355,7 @@ bool Set(Program *p) //add code to read number and store it in array of Variable
             //pop top of stack
 
             //set active variable to this value
-            
-            //free stack 
+         
             stack_free(pfix_stack);
             return true;
          }
@@ -807,8 +814,6 @@ int char2index(char letter)
 stack* stack_init(void)
 {
    stack *s = (stack*) ncalloc(1, sizeof(stack));
-   /* Some implementations would allow you to pass
-      a hint about the initial size of the stack */
    s->a = (stacktype*) ncalloc(FIXEDSIZE, sizeof(stacktype));
    s->size = 0;
    s->capacity= FIXEDSIZE;
@@ -849,6 +854,7 @@ bool stack_peek(stack* s, stacktype* d)
    return true;
 }
 
+//this function might be useful for testing?
 /*
 void stack_tostring(stack* s, char* str)
 {
@@ -911,6 +917,45 @@ double get_val_active_var(Program *p)
    return val; 
 }
 
+//adapted from Neill's https://github.com/csnwc/ADTs/blob/main/Stack/postfix.c
+void calc_binary_expression(Program *p, stack *s)
+{
+   char op = get_operator(p);
+   double top, top_minus_1, result; 
+   stack_pop(s, &top);
+   stack_pop(s, &top_minus_1);
+      switch(op){
+         case '+' :
+            result = top_minus_1 + top;
+            break;
+         case '-' :
+            result = top_minus_1 - top;
+            break;
+         case '*' :
+            result = top_minus_1 * top;
+            break;
+         case '/' :
+            result = top_minus_1 / top;  //handle case where divide by zero: exit gracefully 
+            break;
+         default:
+            printf("Failed to interpret\n");
+            exit(EXIT_FAILURE);
+         }
+   stack_push(s, result);
+}
+
+char get_operator(Program *p)
+{
+   char op = p->wds[p->cw][0]; 
+   return op; 
+}
+
+char var2letter(Program *p)
+{
+   char letter = p->wds[p->cw][1]; //i.e. 2nd char of current word e.g. if cw is $A, 2nd char is 'A'
+   return letter; 
+}
+
 //HELPER FUNCTIONS
 
 void clear_buff(Program *p)
@@ -965,18 +1010,65 @@ void test(void)
    char tst[ROW_HEIGHT*COL_WIDTH+1];
    // *** INTERPRETING TESTS ***
 
-   //stack 
+
+   //get_operator 
+   
+   clear_buff(prog);
+   str2buff(prog, "+", 1);
+   assert(get_operator(prog)=='+');
+   str2buff(prog, "-", 1);
+   assert(get_operator(prog)=='-');
+   str2buff(prog, "*", 1);
+   assert(get_operator(prog)=='*');
+   str2buff(prog, "/", 1);
+   assert(get_operator(prog)=='/');
+   clear_buff(prog);
+
+   //double calc_binary_expression
    stack *s;
    s = stack_init();
-   double num_push_1 = 10;
-   double num_push_2 = 20;
-   double num_pop = 0;
-   stack_push(s, num_push_1); //push 10 to the stack 
-   stack_push(s, num_push_2); //push 20 to the stack
-   stack_pop(s, &num_pop); //push top of stack and store it in num_pop
-   assert(fabs(num_pop - 20)<=0.00001);
-   stack_free(s);
-   
+
+   str2buff(prog, "+", 1); // addition
+   double x = 10;
+   double y = 8;
+   stack_push(s, x);
+   stack_push(s, y); 
+   calc_binary_expression(prog, s);
+   double top_stack = -1; 
+   stack_pop(s, &top_stack);   //check result is on top of stack
+   assert(fabs(top_stack-18)<=0.00001);
+
+   str2buff(prog, "-", 1); // subtraction
+   stack_push(s, x);
+   stack_push(s, y); 
+   calc_binary_expression(prog, s);
+   stack_pop(s, &top_stack);   //check result is on top of stack
+   //assert(fabs(top_stack-2)<=0.00001);
+
+   str2buff(prog, "*", 1); // multiplication
+   stack_push(s, x);
+   stack_push(s, y); 
+   calc_binary_expression(prog, s);
+   stack_pop(s, &top_stack);   //check result is on top of stack
+   //assert(fabs(top_stack-80)<=0.00001);
+
+   str2buff(prog, "/", 1); // division
+   stack_push(s, x);
+   stack_push(s, y); 
+   calc_binary_expression(prog, s);
+   stack_pop(s, &top_stack);   //check result is on top of stack
+   //assert(fabs(top_stack-1.25)<=0.00001);
+
+   stack_free(s); //don't init and free too many times: will make it really slow
+   clear_buff(prog);
+
+   //VERY IMPORTANT! - ensure that interpreter exits gracefully for stack overflow and underflow (trying to pop from empty stack)
+   //also ensure fails when try to divide by zero
+
+   //var2letter
+   str2buff(prog, "$A", 1);
+   assert(var2letter(prog)=='A');
+
    //word_is_colour
    str2buff(prog, "RED", 1); //red 
    assert(word_is_colour(prog));
