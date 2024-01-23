@@ -1,8 +1,6 @@
 #include "interp.h"
 #include "../neillsimplescreen.c" //don't know if I should be including C files 
-#include "./neills_stack/stack.h"
-#include "./neills_stack/general.c"
-#include "./neills_stack/specific.h"
+#include "neills_general.c"
 
 //run sanitizer and valgrind 
 //is extremely long line in assert test ok?
@@ -288,7 +286,7 @@ bool Col(Program *p)
    return false;
 }
 
-bool Pfix(Program *p)
+bool Pfix(Program *p, stack *s)
 {
    //if word is ")", return true and don't increment p
    if(word_matches(p, ")")){
@@ -296,21 +294,25 @@ bool Pfix(Program *p)
    }
    
    if(Op(p)){
+      //pop top two values from stack
+      //evaluate result - need new function for this
+      //push result to stack
       next_word(p);
-      if(Pfix(p)){
+      if(Pfix(p, s)){
          return true;
       }
    }
    else{
       if(Varnum(p)){
+         //if num, push number to stack
+         //if var, get value, push number to stack
          next_word(p);
-         if(Pfix(p)){
+         if(Pfix(p, s)){
             return true;
          }
       }
    } 
-
-   //ERROR("Pfix failed");
+   
    return false;
 }
 
@@ -331,6 +333,9 @@ bool Items(Program *p)
 
 bool Set(Program *p) //add code to read number and store it in array of Variable structs at correct index
 { 
+   //initialise stack
+   stack *pfix_stack;
+   pfix_stack = stack_init();
    if(word_matches(p, "SET")){
       next_word(p);
       if(Ltr(p, NO_VAR_CALL)){
@@ -338,19 +343,26 @@ bool Set(Program *p) //add code to read number and store it in array of Variable
          //int index = get_active_var_index(p);
          //printf("Index in set func %i\n", index);
          next_word(p);
-         if(brace_then_pfix(p)){
+         if(brace_then_pfix(p, pfix_stack)){
+            //pop top of stack
+
+            //set active variable to this value
+            
+            //free stack 
+            stack_free(pfix_stack);
             return true;
          }
       }
    }
+   stack_free(pfix_stack);
    return false; 
 }
 
-bool brace_then_pfix(Program *p)
+bool brace_then_pfix(Program *p, stack *s)
 {
    if(word_matches(p, "(")){
       next_word(p);
-      if(Pfix(p)){
+      if(Pfix(p, s)){
          return true;
       }
    }
@@ -837,6 +849,7 @@ bool stack_peek(stack* s, stacktype* d)
    return true;
 }
 
+/*
 void stack_tostring(stack* s, char* str)
 {
    char tmp[ELEMSIZE];
@@ -851,6 +864,7 @@ void stack_tostring(stack* s, char* str)
    }
    str[strlen(str)-1] = '\0';
 }
+ */
 
 bool stack_free(stack* s)
 {
@@ -950,6 +964,18 @@ void test(void)
    // To do: make assert testing exhaustive
    char tst[ROW_HEIGHT*COL_WIDTH+1];
    // *** INTERPRETING TESTS ***
+
+   //stack 
+   stack *s;
+   s = stack_init();
+   double num_push_1 = 10;
+   double num_push_2 = 20;
+   double num_pop = 0;
+   stack_push(s, num_push_1); //push 10 to the stack 
+   stack_push(s, num_push_2); //push 20 to the stack
+   stack_pop(s, &num_pop); //push top of stack and store it in num_pop
+   assert(fabs(num_pop - 20)<=0.00001);
+   stack_free(s);
    
    //word_is_colour
    str2buff(prog, "RED", 1); //red 
@@ -1083,7 +1109,7 @@ void test(void)
    rst_ptr(prog);
    clear_buff(prog); 
 
-   str2buff(prog,"B ( 1 )", 4); //Letter A has index 2
+   str2buff(prog,"B ( 1 )", 4); //Letter B has index 2
    set_active_var_index(prog);
    set_val_active_var(prog, 17.99); //set B to 17.99
    assert(fabs(get_val_active_var(prog)-17.99)<=0.00001); //get value of B
@@ -1750,75 +1776,77 @@ void test(void)
    // state that the operator must come after the varnum (i.e. does not ensure postfix)
    // For now I'm assuming these weird instructions will parse OK but not be interpreted 
 
+   stack *pfix_stack;
+   pfix_stack = stack_init();
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, ")", 1); // ) only 
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "", 1); //null string  
-   assert(Pfix(prog)==false);
+   assert(Pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A 0.25 - )", 4); //interpretable instruction
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "0.25 $A - )", 4); //swapped var and num
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A 0.25 ! )", 4); //incorrect operator
-   assert(Pfix(prog)==false);
+   assert(Pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$a 0.25 / )", 4); //incorrect var
-   assert(Pfix(prog)==false);
+   assert(Pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A 0.25 -", 3); //missing )
-   assert(Pfix(prog)==false);
+   assert(Pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A RED - )", 4); //word instead of varnum
-   assert(Pfix(prog)==false);
+   assert(Pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A 0.25 - ]", 4); //wrong type of closing bracket
-   assert(Pfix(prog)==false);
+   assert(Pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "* $A )", 3); //operator then var [not interpretable]
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "+ - / * )", 5); //lots of operators followed by ) [not interpretable]
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "+ )", 2); //operator then ) [not interpretable]
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "10 )", 2); //number then ) [not interpretable]
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$Q )", 2); //var then ) [not interpretable]
-   assert(Pfix(prog)==true);
+   assert(Pfix(prog, pfix_stack)==true);
 
    //Items
 
@@ -1929,17 +1957,17 @@ void test(void)
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "( $A 0.25 - )", 5); // ( then Pfix
-   assert(brace_then_pfix(prog)==true);
+   assert(brace_then_pfix(prog, pfix_stack)==true);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "$A 0.25 - )", 4); // no ( then Pfix
-   assert(brace_then_pfix(prog)==false);
+   assert(brace_then_pfix(prog, pfix_stack)==false);
 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "( $A 0.25 - ", 4); // ( then Pfix with missing )
-   assert(brace_then_pfix(prog)==false);
+   assert(brace_then_pfix(prog, pfix_stack)==false);
 
    //Lst 
 
@@ -2180,6 +2208,8 @@ void test(void)
 
    //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
    
+   stack_free(pfix_stack);
+
    free(prog);
    
 }

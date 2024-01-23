@@ -1,4 +1,4 @@
-#include "general.h"
+#include "interp.h"
 
 void on_error(const char* s)
 {

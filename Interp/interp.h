@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,6 +41,45 @@
 #define OUT_FILE 2
 #define A_TO_Z 25
 #define BASE_LETTER 'A'
+//Neill's stack (specific.h)
+#define MAXINPUT 1000
+#define FORMATSTR "%i"
+#define ELEMSIZE 20
+#define STACKTYPE "Realloc"
+#define FIXEDSIZE 16
+#define SCALEFACTOR 2
+
+//Neill's stack (stack.h)
+typedef double stacktype;
+
+typedef struct stack stack;
+
+/* Create an empty stack */
+stack* stack_init(void);
+/* Add element to top */
+void stack_push(stack* s, stacktype i);
+/* Take element from top */
+bool stack_pop(stack* s, stacktype* d);
+/* Clears all space used */
+bool stack_free(stack* s);
+
+/* Optional? */
+
+/* Copy top element into d (but don't pop it) */
+bool stack_peek(stack*s,  stacktype* d);
+/* Make a string version - keep .dot in mind */
+void stack_tostring(stack*, char* str);
+
+//Neill's stack (general.h)
+void on_error(const char* s);
+void* ncalloc(int n, size_t size);
+void** n2dcalloc(int h, int w, size_t size);
+void** n2drecalloc(void** p, int oh, int nh, int ow, int nw, size_t szelem);
+void n2dfree(void**p, int h);
+void* nrecalloc(void* p, int oldsz, int newsz);
+void* nremalloc(void* p, int bytes);
+void* nfopen(char* fname, char* mode);
+
 
 enum var_data_type {NUMBER, STRING};
 typedef enum var_data_type var_data_type; 
@@ -68,6 +109,14 @@ typedef struct prog Program;
 
 char str[ROW_HEIGHT*COL_WIDTH+1];
 
+struct stack {
+   /* Underlying array */
+   stacktype* a;
+   int size;
+   int capacity;
+};
+
+
 //Parser grammar functions
 bool Prog(Program *p); 
 bool Inslst(Program *p);
@@ -82,10 +131,10 @@ bool Var(Program *p);
 bool Varnum(Program *p);
 bool Item(Program *p);
 bool Col(Program *p);
-bool Pfix(Program *p);
+bool Pfix(Program *p, stack *s);
 bool Items(Program *p);
 bool Set(Program *p);
-bool brace_then_pfix(Program *p);
+bool brace_then_pfix(Program *p, stack *s);
 bool Lst(Program *p);
 bool Loop(Program *p);
 bool over_lst_inslst(Program *p);
