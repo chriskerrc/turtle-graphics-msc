@@ -39,7 +39,7 @@
 #define ERROR_CONST 2
 #define ROTATE_CONST -90
 #define OUT_FILE 2
-#define A_TO_Z 25
+#define A_TO_Z 26
 #define BASE_LETTER 'A'
 
 //TO DO: put Neill's stuff in different header file if possible 
@@ -178,7 +178,7 @@ char get_colour(Program *p);
 int char2col(char col);
 int char2index(char letter);
 void calc_binary_expression(Program *p, stack *s);
-char get_char(Program *p);
+char get_character(Program *p);
 char var2letter(Program *p);
 void set_val_var(Program *p, double val, int index);
 double get_val_var(Program *p, int index);
