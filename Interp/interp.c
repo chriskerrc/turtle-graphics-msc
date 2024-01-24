@@ -19,7 +19,7 @@
 
 int main(int argc, char *argv[]) //make main function shorter
 {
-   bool run_tests = true; //put this in prog struct or something 
+   bool run_tests = false; //put this in prog struct or something 
    if(run_tests == true){
       test();
    }
@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) //make main function shorter
    if(Prog(prog)){
       //printf("Parsed OK\n");
       fclose(fpin);
+      printf("first item index %i\n", prog->first_item_index);
       if(prog->is_text_output==true){
          write_file(argv, prog);
       }
@@ -127,7 +128,7 @@ bool Fwd(Program *p)
       next_word(p);
       if(Varnum(p)){
          if(Num(p)){
-            if(sscanf(p->wds[p->cw], "%lf", &distance)== 1){
+            if(get_double(p, &distance)){
                draw_forward(p, distance);
                if(p->is_text_output==false){
                   //put this stuff in a wrapper function
@@ -158,7 +159,7 @@ bool Rgt(Program *p)
       next_word(p);
       if(Varnum(p)){
          if(Num(p)){ //this code is copied from Fwd: make it a function instead
-            if(sscanf(p->wds[p->cw], "%lf", &new_direction)== 1){
+            if(get_double(p, &new_direction)){
                //double valid_direction = validate_degree(new_direction);
                change_direction(p, new_direction);
                //printf("calling change direction\n");
@@ -175,7 +176,7 @@ bool Rgt(Program *p)
 bool Num(Program *p)
 {
    double d;
-   if(sscanf(p->wds[p->cw], "%lf", &d)==1){  //for every sscanf like this, replace p->wds[p->cw] with function that hides this ugly syntax
+   if(sscanf(p->wds[p->cw], "%lf", &d)==1){  //replace this with a boolean function 
       return true;
    }
    //printf("%lf", d);
@@ -255,12 +256,18 @@ bool Varnum(Program *p)
 }
 
 bool Item(Program *p)
-{
+{  
+   p->item_count++; //increment item_count
+   printf("current word (item): %i\n", p->cw);
    if(Varnum(p)){
+      //get number
+      //save it at to variable at current index
+      //jump to first word of instruction 
+      //call Ins()
       return true;
    }
    else{
-      if(Word(p)){
+      if(Word(p)){ //need to account for words as well (loop)
          return true;
       }
    }
@@ -291,7 +298,7 @@ bool Col(Program *p)
 
 bool Pfix(Program *p, stack *s) //make this function shorter
 {
-   double num = -1; 
+   double num = -1;
    char letter = 0;
    int var_index = 0;
    //if word is ")", return true and don't increment p
@@ -309,7 +316,7 @@ bool Pfix(Program *p, stack *s) //make this function shorter
    else{
       if(Varnum(p)){
          if(Num(p)){
-            if(sscanf(p->wds[p->cw], "%lf", &num)== 1){ //ideally make this a function rather than copying and pasting it around 
+            if(get_double(p, &num)){
                stack_push(s, num);
             }
          }
@@ -328,13 +335,14 @@ bool Pfix(Program *p, stack *s) //make this function shorter
    return false;
 }
 
-bool Items(Program *p)
+bool Items(Program *p) //counter in this function
 {
    //if word is "}", return true and don't increment p
    if(word_matches(p, "}")){
       return true;
    }
    if(Item(p)){
+      //the first time this is called, 
       next_word(p);
       if(Items(p)){
          return true;
@@ -391,16 +399,27 @@ bool Lst(Program *p)
 }
 
 bool Loop(Program *p)
-{
+{  
    if(word_matches(p, "LOOP")){
       next_word(p);
       if(Ltr(p, NO_VAR_CALL)){
+         char letter = get_character(p);
+         int var_index = char2index(letter);
+         p->loop_var_index = var_index;
          next_word(p);
+         p->first_item_index = get_first_item_index(p);
+         p->last_item_index = get_last_item_index(p);
+         p->loop_jump = get_loop_jump(p->first_item_index, p->last_item_index);
+         printf("last item index %i\n", p->last_item_index);
+         printf("first item index %i\n", p->first_item_index);
+         printf("loop jump %i\n", p->loop_jump);
          if(over_lst_inslst(p)){
+            execute_loop(p);
             return true;
          }
       }
    }
+   
    return false; 
 }
 
@@ -940,6 +959,84 @@ char var2letter(Program *p)
 {
    char letter = p->wds[p->cw][1]; //i.e. 2nd char of current word e.g. if cw is $A, 2nd char is 'A'
    return letter; 
+}
+
+//Loop 
+
+int get_last_item_index(Program *p)
+{
+   int cnt = 0;
+   int base_word_index = p->cw; 
+   //printf("base word index (last) %i\n", base_word_index);
+   while(p->wds[p->cw][0] != '}'){
+      next_word(p);
+      cnt++;
+      //printf("count (last) %i\n", cnt);
+   }
+   int last_item_index = base_word_index + cnt - 1; 
+   p->cw = base_word_index;  //reset current word 
+   //printf("base word index (last) reset %i\n", base_word_index);
+   return last_item_index; 
+}
+
+int get_first_item_index(Program *p)
+{
+   int cnt = 0; 
+   int base_word_index = p->cw; 
+   //printf("base word index (first)%i\n", base_word_index);
+   while(p->wds[p->cw][0] != '{'){
+      next_word(p);
+      cnt++;
+      //printf("count (first) %i\n", cnt);
+   }
+   int first_item_index = base_word_index + cnt + 1; 
+   p->cw = base_word_index; //reset current word
+   //printf("base word index (first) reset %i\n", base_word_index);
+   return first_item_index; 
+}
+
+int get_loop_jump(int first_item_index, int last_item_index)
+{
+   int index_first_ins_word = last_item_index + LAST_TO_INS;
+   int base_loop_jump = index_first_ins_word - first_item_index; 
+   return base_loop_jump; 
+}
+
+void execute_loop(Program *p) //might need to adjust this to accept stack from loop function, if I need to push var index onto stack for nested loops
+{
+   int first_item_index = p->first_item_index;
+   int last_item_index = p->last_item_index;
+   int loop_var_index = p->loop_var_index; 
+   double num = -1;
+   p->cw = first_item_index; //go to first item in list
+
+   for(int curr_word_index = first_item_index; curr_word_index < last_item_index + 1; curr_word_index++){
+      //jump to current index 
+      p->cw = curr_word_index; 
+      if(Item(p)){
+         if(get_double(p, &num)){
+            set_val_var(p, num, loop_var_index);
+         }
+         //TO DO
+         //if it's a colour, get colour
+         //set variable to this value
+      }
+      //jump to first instruction word 
+      p->cw += p->loop_jump;
+      
+      if(Inslst(p)){ //we've hit "END"
+         //decrement loop_jump
+         p->loop_jump--;   
+      }
+   }
+}
+
+bool get_double(Program *p, double *result)
+{
+   if(sscanf(p->wds[p->cw], "%lf", result)== 1){
+      return true; 
+   }
+   return false;
 }
 
 //HELPER FUNCTIONS

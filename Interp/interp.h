@@ -41,6 +41,7 @@
 #define OUT_FILE 2
 #define A_TO_Z 26
 #define BASE_LETTER 'A'
+#define LAST_TO_INS 2
 
 //TO DO: put Neill's stuff in different header file if possible 
 //Neill's stack (specific.h)
@@ -115,6 +116,12 @@ struct prog{
    bool is_text_output; 
    char colour; 
    variable vars[A_TO_Z];
+   //int curr_item_index; 
+   int loop_var_index;
+   int loop_jump; 
+   int first_item_index;
+   int last_item_index; 
+   int item_count; //don't think I need this...
 };
 typedef struct prog Program;
 
@@ -183,6 +190,11 @@ char var2letter(Program *p);
 void set_val_var(Program *p, double val, int index);
 double get_val_var(Program *p, int index);
 char get_letter(Program *p);
+int get_last_item_index(Program *p);
+int get_first_item_index(Program *p);
+int get_loop_jump(int first_item_index, int last_item_index); //get initial loop jump i.e. number to add to index first list item to get to index first ins 
+void execute_loop(Program *p);
+bool get_double(Program *p, double *result);
 
 //Test function
 void test(void);
