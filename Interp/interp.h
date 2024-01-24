@@ -187,14 +187,17 @@ int char2index(char letter);
 void calc_binary_expression(Program *p, stack *s);
 char get_character(Program *p);
 char var2letter(Program *p);
-void set_val_var(Program *p, double val, int index);
-double get_val_var(Program *p, int index);
+void set_num_val_var(Program *p, double val, int index);
+double get_num_val_var(Program *p, int index);
+bool var_val_is_num(Program *p, int index);
 char get_letter(Program *p);
 int get_last_item_index(Program *p);
 int get_first_item_index(Program *p);
 int get_loop_jump(int first_item_index, int last_item_index); //get initial loop jump i.e. number to add to index first list item to get to index first ins 
 void execute_loop(Program *p);
 bool get_double(Program *p, double *result);
+void run_simple_screen(Program *p);
+
 
 //Test function
 void test(void);
