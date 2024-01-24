@@ -14,6 +14,9 @@
 //add meaningful error messages to interpreter and parser 
 //make interpreter fail for invalid colour "ORANGE" etc. 
 //make interpreter exit gracefully if stack underflow/overflow! 
+//down arrow is rotated 90 degrees. handle negative angles in way that doesn't break other stuff
+//spiral seems to print one less char at the start? something to do with initializing turtle?
+//remember to remove my dummy file forward_var_test.ttl from TTls folder
 
 //important: enable setting var to colour e.g. $A = WHITE. This is needed for tunnel, labyrinth, hypno, downarrow, 5x5
 
@@ -120,31 +123,40 @@ bool Ins(Program *p)
    return false;
 }
 
+//found a bug where I was calling wrong function get_character, instead of var2letter, which was causing $ char to be passed to char2index
+//this was producing index = -29, which was causing out of bounds
+//to do: add some bounds checking in char2index
 bool Fwd(Program *p) //too deeply nested
 {   
+   printf("calling forward\n");
    double distance = 0;
-   //printf("%s\n", p->wds[p->cw]);
+   printf("%s\n", p->wds[p->cw]);
    if(word_matches(p, "FORWARD")){ 
       next_word(p);
+      printf("current word %s\n", p->wds[p->cw]);
       if(Varnum(p)){
          if(Num(p)){
+            printf("it's a num\n");
             if(get_double(p, &distance)){
                draw_forward(p, distance);
                if(p->is_text_output==false){
-                  //run_simple_screen(p);
+                  run_simple_screen(p);
                }
                //printf("calling draw_forward\n");
                return true;
             }
          }
          if(Var(p)){ //need to fail interpreter if it's not set to anything (add a boolean flag when setting vars?)
-            char letter = get_character(p);
+            printf("it's a Var\n");
+            char letter = var2letter(p);
+            
             int var_index = char2index(letter);
             if(var_val_is_num(p, var_index)){
                double distance = get_num_val_var(p, var_index); 
+               printf("distance %lf", distance);
                draw_forward(p, distance);
                if(p->is_text_output==false){
-                  //run_simple_screen(p);
+                  run_simple_screen(p);
                }
                return true;
             }
@@ -236,6 +248,7 @@ bool Ltr(Program *p, int is_var_call)
 
 bool Var(Program *p)
 {
+   printf("hello\n");
    char c[CHARBUFFLEN];
    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '$'){
       if(Ltr(p, VAR_CALL)){
@@ -282,7 +295,7 @@ bool Item(Program *p)
    return false;
 }
 
-bool Col(Program *p)
+bool Col(Program *p) //TO DO: NEED TO INTERPRET "COLOUR $A" AND "COLOUR "BLUE""
 {
    //Question: should this function enforce that word is valid colour?
    //Currently, nothing in the parser enforces what is valid colour, but this is part of the grammar...
@@ -832,8 +845,9 @@ int char2col(char col)
 
 //set 
 
-int char2index(char letter)
+int char2index(char letter) //this function needs bounds checking! if char passed in is not between A and Z, this function should do nothing
 {
+
    int index = letter - BASE_LETTER;
    return index; 
 }
@@ -1541,9 +1555,7 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "FORWARD -17.99", 2); //valid Num
    assert(Fwd(prog)==true);
-
-   //next two blocks cause a bug: out of bounds -29 in var array. investigate and fix
-  /*
+  
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "FORWARD $B", 2); //valid Var
@@ -1553,7 +1565,7 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "FORWARD $Z", 2); //valid Var
    assert(Fwd(prog)==true);
-  */
+  
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "FORWARD $a", 2); //invalid Var: lowercase
@@ -1765,13 +1777,11 @@ void test(void)
    str2buff(prog, "LOOP M OVER { \"GREEN\" } END", 7); // valid Loop
    assert(Ins(prog)==true);
 
-//this block causes a bug: minus 29 out of bounds
-/*
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "LOOP A OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } FORWARD $D RIGHT 90 END", 14); // valid Loop (long)
    assert(Ins(prog)==true);
- */
+ 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "LOOP U OVER { \"RED\" } END", 7); // valid Loop (one colour)
@@ -1812,8 +1822,6 @@ void test(void)
    str2buff(prog, "LOOP $Q OVER { 20 }", 6); // missing END (no Inslst)
    assert(over_lst_inslst(prog)==false);
 
-  
-   
    //Var 
 
    clear_buff(prog);
@@ -2139,7 +2147,6 @@ void test(void)
    str2buff(prog, "SET A ( $A 0.25 - )", 7); // valid expression with sensible Pfix 
    assert(Set(prog)==true);
 
-   //as above, this block causes sanitizer error
  
    clear_buff(prog);
    rst_ptr(prog);
@@ -2246,13 +2253,13 @@ void test(void)
    str2buff(prog, "LOOP M OVER { \"GREEN\" } END", 7); // valid Loop
    assert(Loop(prog)==true);
 
-//this next block makes var index go out of bounds -29: investigate and fix 
-/*
+//found bug from this next code block: in Fwd, was reading in $ from var instead of the char, and this was being converted to index -29
+
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "LOOP A OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } FORWARD $D RIGHT 90 END", 14); // valid Loop (long)
    assert(Loop(prog)==true);
-*/
+
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "LOOP U OVER { \"RED\" } END", 7); // valid Loop (one colour)
@@ -2274,7 +2281,6 @@ void test(void)
    assert(Loop(prog)==false);
 
    //found a bug where Ltr function thinks $W is a valid letter, because of the way I wrote it to be called recursively as part of Var
-    
 
 
    //over_lst_inslst
@@ -2320,13 +2326,11 @@ void test(void)
    assert(over_lst_inslst(prog)==true);
 
 
-   //BUG: the next block makes index go out of bounds in var array. index = -29. investigate and fix
-/*
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } FORWARD $D RIGHT 90 END", 12); // long expression: colours, forward, right
    assert(over_lst_inslst(prog)==true);
- */
+ 
    //when Ins is expanded to include Col etc, retest this function with this string 
    //str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } COLOUR $C FORWARD $D RIGHT 90 END", 14); // long expression
   
