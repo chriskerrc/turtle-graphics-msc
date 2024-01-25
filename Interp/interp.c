@@ -512,8 +512,11 @@ void print_grid_screen(Program *p)
 {  
    for(int row = 0; row < ROW_HEIGHT; row++){
       for(int col = 0; col < COL_WIDTH; col++){
-         if(isalpha(p->grid[row][col])){
-            printf("%c", p->grid[row][col]);
+         char c = p->grid[row][col];
+         int ansi = char2ansi(c);
+         neillfgcol(ansi);
+         if(isalpha(c)){
+            printf("%c", c);
          }
          else{
             printf(" "); //print a space
@@ -522,6 +525,7 @@ void print_grid_screen(Program *p)
       printf("\n");
    }
    printf("\n");
+   neillreset();
 }
 
 void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
@@ -857,7 +861,7 @@ char get_colour_char(Program *p)
    return col; 
 }
 
-int char2col(char col)
+int char2ansi(char col)
 {
    int colour_code = 0;
    switch (col) {
@@ -1129,7 +1133,7 @@ void run_simple_screen(Program *p)
 {
    neillcursorhome();
    char col = get_colour_char(p);
-   int ansi = char2col(col);
+   int ansi = char2ansi(col);
    neillfgcol(ansi);
    print_grid_screen(p);
    neillbusywait(1.0);

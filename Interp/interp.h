@@ -184,7 +184,7 @@ void set_colour(Program *p, char col);
 char colour2char(Program *p);
 char get_colour_char(Program *p);
 const char* get_colour_str(Program *p);
-int char2col(char col);
+int char2ansi(char col);
 int char2index(char letter);
 void calc_binary_expression(Program *p, stack *s);
 char get_character(Program *p);
