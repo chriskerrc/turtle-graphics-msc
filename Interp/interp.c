@@ -22,7 +22,7 @@
 
 int main(int argc, char *argv[]) //make main function shorter
 {
-   bool run_tests = true; //put this in prog struct or something 
+   bool run_tests = false; //put this in prog struct or something 
    if(run_tests == true){
       test();
    }
@@ -131,10 +131,18 @@ bool Fwd(Program *p) //too deeply nested
    printf("calling forward\n");
    double distance = 0;
    printf("%s\n", p->wds[p->cw]);
-   if(word_matches(p, "FORWARD")){ 
+   /*
+   if(!word_matches(p, "FORWARD")) {
+      return false;
+   }
+   next_word(p);
+   */
+  //apply this kind of stuff to make my functions less deeply nested
+
+   if(word_matches(p, "FORWARD")){  //if ! word_matches, return false 
       next_word(p);
       printf("current word %s\n", p->wds[p->cw]);
-      if(Varnum(p)){
+      if(Varnum(p)){  //
          if(Num(p)){
             printf("it's a num\n");
             if(get_double(p, &distance)){
@@ -296,18 +304,22 @@ bool Item(Program *p)
 }
 
 bool Col(Program *p) //TO DO: NEED TO INTERPRET "COLOUR $A" AND "COLOUR "BLUE""
-{
-   //Question: should this function enforce that word is valid colour?
-   //Currently, nothing in the parser enforces what is valid colour, but this is part of the grammar...
-   
+{ 
    //printf("Col: %s\n", p->wds[p->cw]);
    if(word_matches(p, "COLOUR")){
       next_word(p);
       if(Var(p)){
+         //read colour from variable
+         //colour2char
+         //set_colour
          return true;
       }
       else{
          if(Word(p)){
+            if(word_is_colour(p)){
+               char col = colour2char(p);
+               set_colour(p, col);
+            }
             return true;
          }
       }       
@@ -425,7 +437,7 @@ bool Loop(Program *p)
       if(Ltr(p, NO_VAR_CALL)){
          char letter = get_character(p);
          int var_index = char2index(letter);
-         p->loop_var_index = var_index;
+         p->loop_var_index = var_index; //have this as local var, all p-> arelocal 
          next_word(p);
          p->first_item_index = get_first_item_index(p);
          p->last_item_index = get_last_item_index(p);
@@ -544,17 +556,20 @@ void change_direction(Program *p, double new_direction)
    //printf("new direction in change dir func %lf\n", new_direction);
    double curr_direction = p->curr_direction;
    p->curr_direction = new_direction + curr_direction; 
+   p->curr_direction = validate_degree(p->curr_direction); 
    //printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
+//handle this when adding to current degree, to make -90 the same as 270 
 double validate_degree(double deg) //not sure where to use this function. trying to do that seems to break things, but not checking this will probably cause bugs...
 {
+
    double new_angle = 0;
-   if(deg > 0 && deg > MAX_ANGLE){
+   if(deg > 0 && deg < MAX_ANGLE){
       new_angle = deg; 
    }
    if(deg > MAX_ANGLE){
-      new_angle = fmod(deg,MAX_ANGLE); 
+      new_angle = deg-MAX_ANGLE; 
    }
    if(deg < 0){
       new_angle = neg_degree_to_pos(deg);
@@ -562,11 +577,11 @@ double validate_degree(double deg) //not sure where to use this function. trying
    return new_angle; 
 }
 
-double neg_degree_to_pos(double deg)
+double neg_degree_to_pos(double deg) //fmod with 360 instead of while loop?
 {
    double new_angle = deg;
-   while(new_angle < 0){
-      new_angle = new_angle + MAX_ANGLE;
+   if(new_angle < 0){
+      new_angle = MAX_ANGLE + deg; 
    }
    return new_angle; 
 }
@@ -770,38 +785,59 @@ void set_colour(Program *p, char col)
 bool word_is_colour(Program *p) //make this function shorter
 {
    if(word_matches(p, "RED")){
-      set_colour(p, RED);
       return true;
    }
    if(word_matches(p, "BLACK")){
-      set_colour(p, BLACK);
       return true;
    }
    if(word_matches(p, "GREEN")){
-      set_colour(p, GREEN);
       return true;
    }
    if(word_matches(p, "BLUE")){
-      set_colour(p, BLUE);
       return true;
    }
    if(word_matches(p, "YELLOW")){
-      set_colour(p, YELLOW);
       return true;
    }
    if(word_matches(p, "CYAN")){
-      set_colour(p, CYAN);
       return true;
    }
    if(word_matches(p, "MAGENTA")){
-      set_colour(p, MAGENTA);
       return true;
    }
    if(word_matches(p, "WHITE")){
-      set_colour(p, WHITE);
       return true;
    }
    return false; 
+}
+
+char colour2char(Program *p) //make this function shorter
+{
+   if(word_matches(p, "RED")){
+      return RED;
+   }
+   if(word_matches(p, "BLACK")){
+      return BLACK;
+   }
+   if(word_matches(p, "GREEN")){
+      return GREEN;
+   }
+   if(word_matches(p, "BLUE")){
+      return BLUE;
+   }
+   if(word_matches(p, "YELLOW")){
+      return YELLOW;
+   }
+   if(word_matches(p, "CYAN")){
+      return CYAN;
+   }
+   if(word_matches(p, "MAGENTA")){
+      return MAGENTA;
+   }
+   if(word_matches(p, "WHITE")){
+      return WHITE;
+   }
+   return 'Z'; //not sure what else to do here
 }
 
 char get_colour(Program *p)
@@ -1023,6 +1059,7 @@ int get_loop_jump(int first_item_index, int last_item_index)
    return base_loop_jump; 
 }
 
+//pass local variables into this function from loop func
 void execute_loop(Program *p) //might need to adjust this to accept stack from loop function, if I need to push var index onto stack for nested loops
 {
    int first_item_index = p->first_item_index;
@@ -1202,7 +1239,7 @@ void test(void)
    str2buff(prog, "RED", 1); //red 
    assert(word_is_colour(prog));
    str2buff(prog, "YELLOW", 1); //yellow
-   assert(word_is_colour(prog));
+   assert(word_is_colour(prog));execute
    str2buff(prog, "BLUE", 1); //blue
    assert(word_is_colour(prog));
    str2buff(prog, "GREEN", 1); //green
@@ -1211,7 +1248,7 @@ void test(void)
    assert(word_is_colour(prog));
    str2buff(prog, "BLACK", 1); //black
    assert(word_is_colour(prog));
-   str2buff(prog, "CYAN", 1); //cyan
+   str2buff(prog, "CYAN", 1); //cyanexecute
    assert(word_is_colour(prog));
    str2buff(prog, "ORANGE", 1); //orange (not a valid colour)
    assert(!word_is_colour(prog));
