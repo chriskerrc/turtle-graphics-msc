@@ -129,7 +129,7 @@ bool Ins(Program *p)
 //to do: add some bounds checking in char2index
 bool Fwd(Program *p) //too deeply nested
 {   
-   printf("calling forward\n");
+   //printf("calling forward\n");
    double distance = 0;
    //printf("%s\n", p->wds[p->cw]);
    /*
@@ -182,16 +182,16 @@ bool Fwd(Program *p) //too deeply nested
 
 bool Rgt(Program *p) //too deeply nested
 {
-   printf("calling right\n");
+   //printf("calling right\n");
    double new_direction = 0; 
    if(word_matches(p, "RIGHT")){
       next_word(p);
       if(Varnum(p)){
          if(Num(p)){ //this code is copied from Fwd: make it a function instead
             if(get_double(p, &new_direction)){
-               printf("new direction in Rgt %lf\n", new_direction);
+               //printf("new direction in Rgt %lf\n", new_direction);
                double valid_direction = validate_degree(new_direction);
-                printf("validated direction in Rgt %lf\n", valid_direction);
+               //printf("validated direction in Rgt %lf\n", valid_direction);
                change_direction(p, valid_direction);
                //printf("calling change direction\n");
                return true;
@@ -456,9 +456,9 @@ bool Loop(Program *p)
          int first_item_index = get_first_item_index(p);
          int last_item_index = get_last_item_index(p);
          int loop_jump = get_loop_jump(first_item_index, last_item_index);
-         printf("last item index %i\n", last_item_index);
-         printf("first item index %i\n", first_item_index);
-         printf("loop jump %i\n", loop_jump);
+         //printf("last item index %i\n", last_item_index);
+         //printf("first item index %i\n", first_item_index);
+         //printf("loop jump %i\n", loop_jump);
          if(over_lst_inslst(p)){
             execute_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
             return true;
@@ -512,7 +512,7 @@ void init_turtle(Program *p)
       p->curr_y = MID_ROW;
       p->curr_x = MID_COL;
       p->curr_direction = ROTATE_CONST; 
-      printf("current direction initialised %lf", p->curr_direction);
+      //printf("current direction initialised %lf", p->curr_direction);
       set_colour(p, WHITE);
    }
 }
@@ -576,13 +576,13 @@ double deg2rad(double deg)
 
 void change_direction(Program *p, double new_direction)
 {
-   printf("new direction in change dir func %lf\n", new_direction);
+   //printf("new direction in change dir func %lf\n", new_direction);
    double curr_direction = p->curr_direction;
-   printf("current direction in change_direction func %lf\n", curr_direction);
+   //printf("current direction in change_direction func %lf\n", curr_direction);
    double raw_new_direction = new_direction + curr_direction; 
-   printf("raw new direction in change_direction func %lf\n", raw_new_direction);
+   //printf("raw new direction in change_direction func %lf\n", raw_new_direction);
    p->curr_direction = validate_degree(raw_new_direction); 
-   printf("updated direction in change dir func %lf\n", p->curr_direction);
+   //printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
 //handle this when adding to current degree, to make -90 the same as 270 
@@ -1011,7 +1011,7 @@ double get_num_val_var(Program *p, int index)
 void set_col_val_var(Program *p, int index)
 {  
    char colour = colour2char(p);
-   printf("setting var to this col %c\n", colour);
+   //printf("setting var to this col %c\n", colour);
    p->vars[index].type = CHAR;
    p->vars[index].data.col = colour;
 }
@@ -1114,13 +1114,13 @@ void execute_loop(Program *p, int first_item_index, int last_item_index, int loo
    for(int curr_word_index = first_item_index; curr_word_index < last_item_index + 1; curr_word_index++){
       //jump to current index 
       p->cw = curr_word_index; 
-      printf("current word in loop %s\n", p->wds[p->cw]);
+      //printf("current word in loop %s\n", p->wds[p->cw]);
       if(Item(p)){
          if(get_double(p, &num)){
             set_num_val_var(p, num, loop_var_index);
          }
          if(word_is_colour(p)){
-            printf("Item is colour \n");
+            //printf("Item is colour \n");
             set_col_val_var(p, loop_var_index);
          }
       }
