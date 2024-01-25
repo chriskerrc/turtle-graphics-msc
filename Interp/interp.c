@@ -447,16 +447,16 @@ bool Loop(Program *p)
       if(Ltr(p, NO_VAR_CALL)){
          char letter = get_character(p);
          int var_index = char2index(letter);
-         p->loop_var_index = var_index; //have this as local var, all p-> arelocal 
+         int loop_var_index = var_index; 
          next_word(p);
-         p->first_item_index = get_first_item_index(p);
-         p->last_item_index = get_last_item_index(p);
-         p->loop_jump = get_loop_jump(p->first_item_index, p->last_item_index);
-         //printf("last item index %i\n", p->last_item_index);
-         //printf("first item index %i\n", p->first_item_index);
-         //printf("loop jump %i\n", p->loop_jump);
+         int first_item_index = get_first_item_index(p);
+         int last_item_index = get_last_item_index(p);
+         int loop_jump = get_loop_jump(first_item_index, last_item_index);
+         //printf("last item index %i\n", last_item_index);
+         //printf("first item index %i\n", first_item_index);
+         //printf("loop jump %i\n", loop_jump);
          if(over_lst_inslst(p)){
-            execute_loop(p);
+            execute_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
             return true;
          }
       }
@@ -1091,11 +1091,8 @@ int get_loop_jump(int first_item_index, int last_item_index)
 }
 
 //pass local variables into this function from loop func
-void execute_loop(Program *p) 
+void execute_loop(Program *p, int first_item_index, int last_item_index, int loop_var_index, int loop_jump)
 {
-   int first_item_index = p->first_item_index;
-   int last_item_index = p->last_item_index;
-   int loop_var_index = p->loop_var_index; 
    double num = -1;
    p->cw = first_item_index; //go to first item in list
 
@@ -1112,11 +1109,11 @@ void execute_loop(Program *p)
          }
       }
       //jump to first instruction word 
-      p->cw += p->loop_jump;
+      p->cw += loop_jump;
       
-      if(Inslst(p)){ //we've hit "END"
+      if(Inslst(p)){ //i.e. we've hit "END"
          //decrement loop_jump
-         p->loop_jump--;   
+         loop_jump--;   
       }
    }
 }

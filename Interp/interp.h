@@ -198,7 +198,7 @@ bool var_val_is_col(Program *p, int index);
 int get_last_item_index(Program *p);
 int get_first_item_index(Program *p);
 int get_loop_jump(int first_item_index, int last_item_index); //get initial loop jump i.e. number to add to index first list item to get to index first ins 
-void execute_loop(Program *p);
+void execute_loop(Program *p, int first_item_index, int last_item_index, int loop_var_index, int loop_jump); //to make this shorter could I pass these params in a struct instead?
 bool get_double(Program *p, double *result);
 void run_simple_screen(Program *p);
 
