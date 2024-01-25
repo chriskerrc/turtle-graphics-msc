@@ -17,6 +17,7 @@
 //down arrow is rotated 90 degrees. handle negative angles in way that doesn't break other stuff
 //spiral seems to print one less char at the start? something to do with initializing turtle?
 //remember to remove my dummy file forward_var_test.ttl from TTls folder
+//is there a way to stop Neill's simple screen getting messed up if you have to scroll: ask Louis 
 
 //important: enable setting var to colour e.g. $A = WHITE. This is needed for tunnel, labyrinth, hypno, downarrow, 5x5
 
@@ -128,7 +129,7 @@ bool Ins(Program *p)
 //to do: add some bounds checking in char2index
 bool Fwd(Program *p) //too deeply nested
 {   
-   //printf("calling forward\n");
+   printf("calling forward\n");
    double distance = 0;
    //printf("%s\n", p->wds[p->cw]);
    /*
@@ -164,7 +165,7 @@ bool Fwd(Program *p) //too deeply nested
                //printf("distance %lf", distance);
                draw_forward(p, distance);
                if(p->is_text_output==false){
-                  run_simple_screen(p);
+                 run_simple_screen(p);
                }
                return true;
             }
@@ -181,14 +182,17 @@ bool Fwd(Program *p) //too deeply nested
 
 bool Rgt(Program *p) //too deeply nested
 {
+   printf("calling right\n");
    double new_direction = 0; 
    if(word_matches(p, "RIGHT")){
       next_word(p);
       if(Varnum(p)){
          if(Num(p)){ //this code is copied from Fwd: make it a function instead
             if(get_double(p, &new_direction)){
-               //double valid_direction = validate_degree(new_direction);
-               change_direction(p, new_direction);
+               printf("new direction in Rgt %lf\n", new_direction);
+               double valid_direction = validate_degree(new_direction);
+                printf("validated direction in Rgt %lf\n", valid_direction);
+               change_direction(p, valid_direction);
                //printf("calling change direction\n");
                return true;
             }
@@ -452,9 +456,9 @@ bool Loop(Program *p)
          int first_item_index = get_first_item_index(p);
          int last_item_index = get_last_item_index(p);
          int loop_jump = get_loop_jump(first_item_index, last_item_index);
-         //printf("last item index %i\n", last_item_index);
-         //printf("first item index %i\n", first_item_index);
-         //printf("loop jump %i\n", loop_jump);
+         printf("last item index %i\n", last_item_index);
+         printf("first item index %i\n", first_item_index);
+         printf("loop jump %i\n", loop_jump);
          if(over_lst_inslst(p)){
             execute_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
             return true;
@@ -464,9 +468,11 @@ bool Loop(Program *p)
    
    return false; 
 }
-
-bool over_lst_inslst(Program *p)
+//this is an important bug I found
+bool over_lst_inslst(Program *p) //need make this function only parse, not interpret: pass flags to the child functions to not do anything
+//doing stuff with ins is handled by execute_loop
 {
+   /*
    if(word_matches(p, "OVER")){
       next_word(p);
       if(Lst(p)){
@@ -477,6 +483,8 @@ bool over_lst_inslst(Program *p)
       }
    }
    return false;
+   */
+  return true;
 }
 
 //INTERPRETER FUNCTIONS 
@@ -504,6 +512,7 @@ void init_turtle(Program *p)
       p->curr_y = MID_ROW;
       p->curr_x = MID_COL;
       p->curr_direction = ROTATE_CONST; 
+      printf("current direction initialised %lf", p->curr_direction);
       set_colour(p, WHITE);
    }
 }
@@ -567,18 +576,22 @@ double deg2rad(double deg)
 
 void change_direction(Program *p, double new_direction)
 {
-   //printf("new direction in change dir func %lf\n", new_direction);
+   printf("new direction in change dir func %lf\n", new_direction);
    double curr_direction = p->curr_direction;
-   p->curr_direction = new_direction + curr_direction; 
-   p->curr_direction = validate_degree(p->curr_direction); 
-   //printf("updated direction in change dir func %lf\n", p->curr_direction);
+   printf("current direction in change_direction func %lf\n", curr_direction);
+   double raw_new_direction = new_direction + curr_direction; 
+   printf("raw new direction in change_direction func %lf\n", raw_new_direction);
+   p->curr_direction = validate_degree(raw_new_direction); 
+   printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
 //handle this when adding to current degree, to make -90 the same as 270 
 double validate_degree(double deg) //not sure where to use this function. trying to do that seems to break things, but not checking this will probably cause bugs...
 {
-
    double new_angle = 0;
+   if(deg - 0 < 0.00001){
+      new_angle = 0;
+   }
    if(deg > 0 && deg < MAX_ANGLE){
       new_angle = deg; 
    }
@@ -602,14 +615,16 @@ double neg_degree_to_pos(double deg) //fmod with 360 instead of while loop?
 
 double get_delta_y(double direction, double distance)
 {
-   double angle_rad = deg2rad(direction);
+   double valid_direction = validate_degree(direction);
+   double angle_rad = deg2rad(valid_direction);
    double delta_y = distance * sin(angle_rad);
    return delta_y; 
 }
 
 double get_delta_x(double direction, double distance)
 {
-   double angle_rad = deg2rad(direction);
+   double valid_direction = validate_degree(direction);
+   double angle_rad = deg2rad(valid_direction);
    double delta_x = distance * cos(angle_rad);
    return delta_x; 
 }
@@ -734,14 +749,14 @@ void draw_forward(Program *p, double distance)
 {
    double raw_direction = p->curr_direction;
    //printf("raw direction %lf\n", raw_direction);
-   //double valid_direction = validate_degree(raw_direction);
+   double valid_direction = validate_degree(raw_direction);
    //printf("valid direction %lf\n", valid_direction);
    int start_y = round(p->curr_y);
    int start_x = round(p->curr_x);
    //printf("start y %i\n", start_y);
    //printf("start x %i\n", start_x);
-   double delta_x = get_delta_x(raw_direction, distance);
-   double delta_y = get_delta_y(raw_direction, distance);
+   double delta_x = get_delta_x(valid_direction, distance);
+   double delta_y = get_delta_y(valid_direction, distance);
    //printf("delta y %lf\n", delta_y);
    //printf("delta x %lf\n", delta_x);
    int end_y = get_new_y(p, delta_y);
@@ -1094,11 +1109,12 @@ int get_loop_jump(int first_item_index, int last_item_index)
 void execute_loop(Program *p, int first_item_index, int last_item_index, int loop_var_index, int loop_jump)
 {
    double num = -1;
-   p->cw = first_item_index; //go to first item in list
+   //p->cw = first_item_index; //go to first item in list
 
    for(int curr_word_index = first_item_index; curr_word_index < last_item_index + 1; curr_word_index++){
       //jump to current index 
       p->cw = curr_word_index; 
+      printf("current word in loop %s\n", p->wds[p->cw]);
       if(Item(p)){
          if(get_double(p, &num)){
             set_num_val_var(p, num, loop_var_index);
@@ -1332,11 +1348,13 @@ void test(void)
 
    //TO DO ...............................................
 
-   //offset_deg
+   //validate_degree
 
    assert(fabs(validate_degree(-10)-350)<= 0.000001); //-10 deg (less than 0)
    assert(fabs(validate_degree(-43)-317)<= 0.000001); //-43 deg (less than 0)
    assert(fabs(validate_degree(-365)-355)<= 0.000001); //-365 deg (less than -360)
+   assert(fabs(validate_degree(-90)-270)<= 0.000001); //-90 deg
+   assert(fabs(validate_degree(-120)-240)<= 0.000001); //-120 deg
 
    //neg_deg_to_pos
    
