@@ -94,14 +94,14 @@ struct stack {
 
 //my stuff again 
 
-enum var_data_type {NUMBER, STRING};
+enum var_data_type {NUMBER, CHAR};
 typedef enum var_data_type var_data_type; 
 
 struct var{                 
    var_data_type type; 
    union { 
       double num; 
-      char* colour; 
+      char col; 
    } data; 
 };
 typedef struct var variable;
@@ -182,7 +182,8 @@ void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot);
 bool word_is_colour(Program *p);
 void set_colour(Program *p, char col);
 char colour2char(Program *p);
-char get_colour(Program *p);
+char get_colour_char(Program *p);
+const char* get_colour_str(Program *p);
 int char2col(char col);
 int char2index(char letter);
 void calc_binary_expression(Program *p, stack *s);
@@ -190,9 +191,10 @@ char get_character(Program *p);
 char var2letter(Program *p);
 void set_num_val_var(Program *p, double val, int index);
 double get_num_val_var(Program *p, int index);
-void set_col_val_var(Program *p, char col, int index);
+void set_col_val_var(Program *p, int index);
 char get_col_val_var(Program *p, int index);
 bool var_val_is_num(Program *p, int index);
+bool var_val_is_col(Program *p, int index);
 int get_last_item_index(Program *p);
 int get_first_item_index(Program *p);
 int get_loop_jump(int first_item_index, int last_item_index); //get initial loop jump i.e. number to add to index first list item to get to index first ins 

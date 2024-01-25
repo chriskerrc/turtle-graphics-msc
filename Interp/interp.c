@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) //make main function shorter
    if(Prog(prog)){
       //printf("Parsed OK\n");
       fclose(fpin);
-      printf("first item index %i\n", prog->first_item_index);
+      //printf("first item index %i\n", prog->first_item_index);
       if(prog->is_text_output==true){
          write_file(argv, prog);
       }
@@ -128,9 +128,9 @@ bool Ins(Program *p)
 //to do: add some bounds checking in char2index
 bool Fwd(Program *p) //too deeply nested
 {   
-   printf("calling forward\n");
+   //printf("calling forward\n");
    double distance = 0;
-   printf("%s\n", p->wds[p->cw]);
+   //printf("%s\n", p->wds[p->cw]);
    /*
    if(!word_matches(p, "FORWARD")) {
       return false;
@@ -141,10 +141,10 @@ bool Fwd(Program *p) //too deeply nested
 
    if(word_matches(p, "FORWARD")){  //if ! word_matches, return false 
       next_word(p);
-      printf("current word %s\n", p->wds[p->cw]);
-      if(Varnum(p)){  //
+      //printf("current word %s\n", p->wds[p->cw]);
+      if(Varnum(p)){ 
          if(Num(p)){
-            printf("it's a num\n");
+            //printf("it's a num\n");
             if(get_double(p, &distance)){
                draw_forward(p, distance);
                if(p->is_text_output==false){
@@ -155,13 +155,13 @@ bool Fwd(Program *p) //too deeply nested
             }
          }
          if(Var(p)){ //need to fail interpreter if it's not set to anything (add a boolean flag when setting vars?)
-            printf("it's a Var\n");
+            //printf("it's a Var\n");
             char letter = var2letter(p);
             
             int var_index = char2index(letter);
             if(var_val_is_num(p, var_index)){
                double distance = get_num_val_var(p, var_index); 
-               printf("distance %lf", distance);
+               //printf("distance %lf", distance);
                draw_forward(p, distance);
                if(p->is_text_output==false){
                   run_simple_screen(p);
@@ -256,7 +256,6 @@ bool Ltr(Program *p, int is_var_call)
 
 bool Var(Program *p)
 {
-   printf("hello\n");
    char c[CHARBUFFLEN];
    if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '$'){
       if(Ltr(p, VAR_CALL)){
@@ -286,7 +285,7 @@ bool Varnum(Program *p)
 bool Item(Program *p)
 {  
    p->item_count++; //increment item_count
-   printf("current word (item): %i\n", p->cw);
+   //printf("current word (item): %i\n", p->cw);
    if(Varnum(p)){
       //get number
       //save it at to variable at current index
@@ -303,21 +302,32 @@ bool Item(Program *p)
    return false;
 }
 
-bool Col(Program *p) //TO DO: NEED TO INTERPRET "COLOUR $A" AND "COLOUR "BLUE""
-{ 
+bool Col(Program *p)
+{  
+   //printf("calling colour\n");
    //printf("Col: %s\n", p->wds[p->cw]);
    if(word_matches(p, "COLOUR")){
       next_word(p);
       if(Var(p)){
-         //read colour from variable
-         //colour2char
-         //set_colour
+         char letter = var2letter(p);
+         //printf("letter of var %c\n", letter);
+         int index = char2index(letter);
+         //printf("index of letter %i\n", index);
+         if(var_val_is_col(p, index)){
+            char colour = get_col_val_var(p, index);
+            //printf("colour stored in var %c\n", letter);
+            set_colour(p, colour);
+         }
+         //else, throw an error
          return true;
       }
       else{
          if(Word(p)){
+            //printf("is word \n");
             if(word_is_colour(p)){
+               //printf("Word is colour \n");
                char col = colour2char(p);
+               //printf("char from colour word %c\n", col);
                set_colour(p, col);
             }
             return true;
@@ -442,9 +452,9 @@ bool Loop(Program *p)
          p->first_item_index = get_first_item_index(p);
          p->last_item_index = get_last_item_index(p);
          p->loop_jump = get_loop_jump(p->first_item_index, p->last_item_index);
-         printf("last item index %i\n", p->last_item_index);
-         printf("first item index %i\n", p->first_item_index);
-         printf("loop jump %i\n", p->loop_jump);
+         //printf("last item index %i\n", p->last_item_index);
+         //printf("first item index %i\n", p->first_item_index);
+         //printf("loop jump %i\n", p->loop_jump);
          if(over_lst_inslst(p)){
             execute_loop(p);
             return true;
@@ -696,7 +706,7 @@ void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 
 void plot_pixel(Program *p, int curr_y_plot, int curr_x_plot)
 {  
-   char curr_col = get_colour(p);
+   char curr_col = get_colour_char(p);
    p->grid[curr_y_plot][curr_x_plot] = curr_col;
 }
 
@@ -784,28 +794,28 @@ void set_colour(Program *p, char col)
 
 bool word_is_colour(Program *p) //make this function shorter
 {
-   if(word_matches(p, "RED")){
+   if(word_matches(p, "\"RED\"")){
       return true;
    }
-   if(word_matches(p, "BLACK")){
+   if(word_matches(p, "\"BLACK\"")){
       return true;
    }
-   if(word_matches(p, "GREEN")){
+   if(word_matches(p, "\"GREEN\"")){
       return true;
    }
-   if(word_matches(p, "BLUE")){
+   if(word_matches(p, "\"BLUE\"")){
       return true;
    }
-   if(word_matches(p, "YELLOW")){
+   if(word_matches(p, "\"YELLOW\"")){
       return true;
    }
-   if(word_matches(p, "CYAN")){
+   if(word_matches(p, "\"CYAN\"")){
       return true;
    }
-   if(word_matches(p, "MAGENTA")){
+   if(word_matches(p, "\"MAGENTA\"")){
       return true;
    }
-   if(word_matches(p, "WHITE")){
+   if(word_matches(p, "\"WHITE\"")){
       return true;
    }
    return false; 
@@ -813,34 +823,34 @@ bool word_is_colour(Program *p) //make this function shorter
 
 char colour2char(Program *p) //make this function shorter
 {
-   if(word_matches(p, "RED")){
+   if(word_matches(p, "\"RED\"")){
       return RED;
    }
-   if(word_matches(p, "BLACK")){
+   if(word_matches(p, "\"BLACK\"")){
       return BLACK;
    }
-   if(word_matches(p, "GREEN")){
+   if(word_matches(p, "\"GREEN\"")){
       return GREEN;
    }
-   if(word_matches(p, "BLUE")){
+   if(word_matches(p, "\"BLUE\"")){
       return BLUE;
    }
-   if(word_matches(p, "YELLOW")){
+   if(word_matches(p, "\"YELLOW\"")){
       return YELLOW;
    }
-   if(word_matches(p, "CYAN")){
+   if(word_matches(p, "\"CYAN\"")){
       return CYAN;
    }
-   if(word_matches(p, "MAGENTA")){
+   if(word_matches(p, "\"MAGENTA\"")){
       return MAGENTA;
    }
-   if(word_matches(p, "WHITE")){
+   if(word_matches(p, "\"WHITE\"")){
       return WHITE;
    }
    return 'Z'; //not sure what else to do here
 }
 
-char get_colour(Program *p)
+char get_colour_char(Program *p)
 {
    char col = ' ';
    col = p->colour;
@@ -965,7 +975,7 @@ bool stack_free(stack* s)
 
 void set_num_val_var(Program *p, double val, int index)
 {
-   p->vars[index].type = NUMBER; //assuming number for now (handle colour later)
+   p->vars[index].type = NUMBER;
    p->vars[index].data.num = val; //set variable[index] to val
    //val = 0; //says it's unused otherwise :(
 }
@@ -977,6 +987,23 @@ double get_num_val_var(Program *p, int index)
        val = p->vars[index].data.num;
    }
    return val; 
+}
+
+void set_col_val_var(Program *p, int index)
+{  
+   char colour = colour2char(p);
+   printf("setting var to this col %c\n", colour);
+   p->vars[index].type = CHAR;
+   p->vars[index].data.col = colour;
+}
+
+char get_col_val_var(Program *p, int index)
+{
+   char colour = 0;
+   if(p->vars[index].type == CHAR){
+       colour = p->vars[index].data.col;
+   }
+   return colour;
 }
 
 //adapted from Neill's https://github.com/csnwc/ADTs/blob/main/Stack/postfix.c
@@ -1060,7 +1087,7 @@ int get_loop_jump(int first_item_index, int last_item_index)
 }
 
 //pass local variables into this function from loop func
-void execute_loop(Program *p) //might need to adjust this to accept stack from loop function, if I need to push var index onto stack for nested loops
+void execute_loop(Program *p) 
 {
    int first_item_index = p->first_item_index;
    int last_item_index = p->last_item_index;
@@ -1075,9 +1102,10 @@ void execute_loop(Program *p) //might need to adjust this to accept stack from l
          if(get_double(p, &num)){
             set_num_val_var(p, num, loop_var_index);
          }
-         //TO DO
-         //if it's a colour, get colour
-         //set variable to this value
+         if(word_is_colour(p)){
+            printf("Item is colour \n");
+            set_col_val_var(p, loop_var_index);
+         }
       }
       //jump to first instruction word 
       p->cw += p->loop_jump;
@@ -1100,7 +1128,7 @@ bool get_double(Program *p, double *result)
 void run_simple_screen(Program *p)
 {
    neillcursorhome();
-   char col = get_colour(p);
+   char col = get_colour_char(p);
    int ansi = char2col(col);
    neillfgcol(ansi);
    print_grid_screen(p);
@@ -1112,7 +1140,18 @@ bool var_val_is_num(Program *p, int index)
    if(p->vars[index].type == NUMBER){
        return true;
    }
-   if(p->vars[index].type == STRING){
+   if(p->vars[index].type == CHAR){
+       return false;
+   }
+   return false; //this is a bit unsafe
+}
+
+bool var_val_is_col(Program *p, int index)
+{
+   if(p->vars[index].type == CHAR){
+       return true;
+   }
+   if(p->vars[index].type == NUMBER){
        return false;
    }
    return false; //this is a bit unsafe
@@ -1239,7 +1278,7 @@ void test(void)
    str2buff(prog, "RED", 1); //red 
    assert(word_is_colour(prog));
    str2buff(prog, "YELLOW", 1); //yellow
-   assert(word_is_colour(prog));execute
+   assert(word_is_colour(prog));
    str2buff(prog, "BLUE", 1); //blue
    assert(word_is_colour(prog));
    str2buff(prog, "GREEN", 1); //green
