@@ -18,6 +18,7 @@
 //spiral seems to print one less char at the start? something to do with initializing turtle?
 //remember to remove my dummy file forward_var_test.ttl from TTls folder
 //is there a way to stop Neill's simple screen getting messed up if you have to scroll: ask Louis 
+//do postscript
 
 //important: enable setting var to colour e.g. $A = WHITE. This is needed for tunnel, labyrinth, hypno, downarrow, 5x5
 
@@ -291,14 +292,10 @@ bool Item(Program *p)
    p->item_count++; //increment item_count
    //printf("current word (item): %i\n", p->cw);
    if(Varnum(p)){
-      //get number
-      //save it at to variable at current index
-      //jump to first word of instruction 
-      //call Ins()
       return true;
    }
    else{
-      if(Word(p)){ //need to account for words as well (loop)
+      if(Word(p)){ 
          return true;
       }
    }
@@ -519,6 +516,9 @@ void init_turtle(Program *p)
 
 void print_grid_screen(Program *p)
 {  
+   if(p->exit_fail == true){
+      return;
+   }
    for(int row = 0; row < ROW_HEIGHT; row++){
       for(int col = 0; col < COL_WIDTH; col++){
          char c = p->grid[row][col];
@@ -994,6 +994,7 @@ bool stack_free(stack* s)
 
 void set_num_val_var(Program *p, double val, int index)
 {
+   p->vars[index].is_set = true;
    p->vars[index].type = NUMBER;
    p->vars[index].data.num = val; //set variable[index] to val
    //val = 0; //says it's unused otherwise :(
@@ -1002,6 +1003,12 @@ void set_num_val_var(Program *p, double val, int index)
 double get_num_val_var(Program *p, int index)
 {
    double val = -1;
+   if(p->vars[index].is_set == false){
+      p->exit_fail = true;
+      neillclrscrn();
+      printf("Failed to interpret: variable is not set? \n");
+      return EXIT_FAILURE;
+   }
    if(p->vars[index].type == NUMBER){
        val = p->vars[index].data.num;
    }
@@ -1012,6 +1019,7 @@ void set_col_val_var(Program *p, int index)
 {  
    char colour = colour2char(p);
    //printf("setting var to this col %c\n", colour);
+   p->vars[index].is_set = true;
    p->vars[index].type = CHAR;
    p->vars[index].data.col = colour;
 }
@@ -1019,6 +1027,12 @@ void set_col_val_var(Program *p, int index)
 char get_col_val_var(Program *p, int index)
 {
    char colour = 0;
+   if(p->vars[index].is_set == false){
+      p->exit_fail = true;
+      neillclrscrn();
+      printf("Failed to interpret: variable is not set? \n");
+      return EXIT_FAILURE;
+   }
    if(p->vars[index].type == CHAR){
        colour = p->vars[index].data.col;
    }

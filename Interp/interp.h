@@ -99,6 +99,7 @@ typedef enum var_data_type var_data_type;
 
 struct var{                 
    var_data_type type; 
+   bool is_set; 
    union { 
       double num; 
       char col; 
@@ -116,12 +117,12 @@ struct prog{
    bool is_text_output; 
    char colour; 
    variable vars[A_TO_Z];
-   //int curr_item_index; 
    int loop_var_index;
    int loop_jump; 
    int first_item_index;
    int last_item_index; 
-   int item_count; //don't think I need this...
+   int item_count; 
+   bool exit_fail;
 };
 typedef struct prog Program;
 
