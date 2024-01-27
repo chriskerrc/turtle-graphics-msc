@@ -33,7 +33,7 @@ run: all
 	./interp_s TTLs/forward.ttl out_forward.txt
 	./interp_s TTLs/set1.ttl out_set1.txt
 	./interp_s TTLs/donothing.ttl out_donothing.txt
-	./interp_s TTLs/fail_parse_ok_interp.ttl out_fail_parse_ok_interp.txt
+	#./interp_s TTLs/fail_parse_ok_interp.ttl out_fail_parse_ok_interp.txt
 	./interp_s TTLs/set2.ttl out_set2.txt
 	./interp_s TTLs/turn.ttl out_turn.txt
 	./interp_s TTLs/spiral.ttl out_spiral.txt
