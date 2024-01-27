@@ -411,21 +411,14 @@ bool Loop(Program *p)
 bool over_lst_inslst(Program *p) //need make this function only parse, not interpret: pass flags to the child functions to not do anything
 //doing stuff with ins is handled by execute_loop
 { 
-   next_word(p); //temporary nonsense to silence warning....................................
-   p->cw -= 1;
-/*
    if(word_matches(p, "OVER")){
       next_word(p);
       if(Lst(p)){
          next_word(p);
-         if(Inslst(p)){
-            return true;
-         }
+         return true;
       }
    }
    return false;
-   */
-  return true;
 }
 
 //INTERPRETER FUNCTIONS 
