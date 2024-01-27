@@ -1,37 +1,22 @@
 #include "interp.h"
-#include "../neillsimplescreen.c" //don't know if I should be including C files 
+#include "../neillsimplescreen.c" //don't know if I should be including C files - handle with makefile instead
 #include "neills_general.c"
 
 //run sanitizer and valgrind 
-//is extremely long line in assert test ok?
-//think about what happens in empty loop: Neill might test for this. for file fail_parse_ok_interp.ttl, make sure you don't stop looking for ENDs after the first one. Need to make sure there's a closing END for each opening LOOP
-//currently my output for donothing.ttl is the turtle in start position, but it should print nothing: only init turtle under certain conditions
-//need to check that output .txt file name is same as input .ttl file (with addition of out_)?
-//should the interpreter run when parsing fails in this file? or only when it succeeds?
-//handle case where direction is more than 360 
-//my implementation of Neill's simple screen is janky: overwrites terminal instructions etc 
-//add a flag to switch off testing for production 
-//add meaningful error messages to interpreter and parser 
 //make interpreter fail for invalid colour "ORANGE" etc. 
 //make interpreter exit gracefully if stack underflow/overflow! 
-//down arrow is rotated 90 degrees. handle negative angles in way that doesn't break other stuff
-//spiral seems to print one less char at the start? something to do with initializing turtle?
 //remember to remove my dummy file forward_var_test.ttl from TTls folder
-//is there a way to stop Neill's simple screen getting messed up if you have to scroll: ask Louis 
-//do postscript
-
-//important: enable setting var to colour e.g. $A = WHITE. This is needed for tunnel, labyrinth, hypno, downarrow, 5x5
 
 int main(int argc, char *argv[]) //make main function shorter
 {
-   bool run_tests = false; //put this in prog struct or something 
-   if(run_tests == true){
+   bool production = true;
+   if(production == false){
       test();
    }
    
    Program* prog = calloc(1, sizeof(Program));
    int i=0;
-   init_turtle(prog); //added init so turtle for read in file is initialized (need to only do this if turtle does something)
+   init_turtle(prog);
    if(argc == 3){
       prog->is_text_output=true;
    }
@@ -39,7 +24,7 @@ int main(int argc, char *argv[]) //make main function shorter
       prog->is_text_output=false; 
    }
 
-   if(argc != 2 && argc != 3){ //magic numbers
+   if(argc != SCREEN_OUT_ARGS && argc != TXT_OUT_ARGS){
       fprintf(stderr, "Expecting two or three command line arguments\n");
       exit(EXIT_FAILURE);
    }
@@ -52,14 +37,11 @@ int main(int argc, char *argv[]) //make main function shorter
    }
    
    while(fscanf(fpin, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
-      //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
 
    if(Prog(prog)){
-      //printf("Parsed OK\n");
       fclose(fpin);
-      //printf("first item index %i\n", prog->first_item_index);
       if(prog->is_text_output==true){
          write_file(argv, prog);
       }
@@ -67,7 +49,7 @@ int main(int argc, char *argv[]) //make main function shorter
       return EXIT_SUCCESS;
    }
 
-   //printf("Not parsed OK\n");
+   printf("Failed to interpret\n");
    fclose(fpin);
    free(prog); 
    return EXIT_FAILURE;
@@ -75,10 +57,8 @@ int main(int argc, char *argv[]) //make main function shorter
 
 bool Prog(Program *p)
 {
-   neillclrscrn(); //not sure if this is right place to call this. was thinking to call this as early as possible...
-   //printf("Prog word: %s\n", p->wds[p->cw]);
+   neillclrscrn(); 
    if(!word_matches(p, "START")){
-      //ERROR("No START statement ?");
       return false;
    }
    next_word(p);
@@ -90,7 +70,6 @@ bool Prog(Program *p)
 
 bool Inslst(Program *p)
 {
-   //if word is "END", return true and don't increment p
    if(word_matches(p, "END")){
       return true;
    }
@@ -100,7 +79,6 @@ bool Inslst(Program *p)
          return true;
       }
    }
-   //ERROR("Inslst failed");
    return false;
 }
 
@@ -121,7 +99,6 @@ bool Ins(Program *p)
    else if(Set(p)){
       return true; 
    }
-   //ERROR("Ins failed");
    return false;
 }
 
@@ -130,9 +107,8 @@ bool Ins(Program *p)
 //to do: add some bounds checking in char2index
 bool Fwd(Program *p) //too deeply nested
 {   
-   //printf("calling forward\n");
    double distance = 0;
-   //printf("%s\n", p->wds[p->cw]);
+   
    /*
    if(!word_matches(p, "FORWARD")) {
       return false;
@@ -141,29 +117,24 @@ bool Fwd(Program *p) //too deeply nested
    */
   //apply this kind of stuff to make my functions less deeply nested
 
-   if(word_matches(p, "FORWARD")){  //if ! word_matches, return false 
+   if(word_matches(p, "FORWARD")){  
       next_word(p);
-      //printf("current word %s\n", p->wds[p->cw]);
       if(Varnum(p)){ 
          if(Num(p)){
-            //printf("it's a num\n");
             if(get_double(p, &distance)){
                draw_forward(p, distance);
                if(p->is_text_output==false){
                   run_simple_screen(p);
                }
-               //printf("calling draw_forward\n");
                return true;
             }
          }
          if(Var(p)){ //need to fail interpreter if it's not set to anything (add a boolean flag when setting vars?)
-            //printf("it's a Var\n");
             char letter = var2letter(p);
             
             int var_index = char2index(letter);
             if(var_val_is_num(p, var_index)){
                double distance = get_num_val_var(p, var_index); 
-               //printf("distance %lf", distance);
                draw_forward(p, distance);
                if(p->is_text_output==false){
                  run_simple_screen(p);
@@ -177,49 +148,41 @@ bool Fwd(Program *p) //too deeply nested
          return true;
       }       
    }   
-   //ERROR("Fwd failed");
    return false;
 }
 
 bool Rgt(Program *p) //too deeply nested
 {
-   //printf("calling right\n");
    double new_direction = 0; 
    if(word_matches(p, "RIGHT")){
       next_word(p);
       if(Varnum(p)){
          if(Num(p)){ //this code is copied from Fwd: make it a function instead
             if(get_double(p, &new_direction)){
-               //printf("new direction in Rgt %lf\n", new_direction);
                double valid_direction = validate_degree(new_direction);
-               //printf("validated direction in Rgt %lf\n", valid_direction);
                change_direction(p, valid_direction);
-               //printf("calling change direction\n");
                return true;
             }
          }
          return true;
       }       
    }   
-   //ERROR("Rgt failed");
    return false;
 }
 
 bool Num(Program *p)
 {
    double d;
-   if(sscanf(p->wds[p->cw], "%lf", &d)==1){  //replace this with a boolean function 
+   if(sscanf(p->wds[p->cw], "%lf", &d)==1){  
       return true;
    }
-   //printf("%lf", d);
-   //ERROR("Num failed");
    return false;
 }
 
 bool Op(Program *p)
 {   
    char c[CHARBUFFLEN];
-   if(sscanf(p->wds[p->cw], "%[+*-/]", c)==1){    //magic num
+   if(sscanf(p->wds[p->cw], "%[+*-/]", c)==1){  
       return true;
    }
    return false;
@@ -227,14 +190,13 @@ bool Op(Program *p)
 
 bool Word(Program *p) // long lines
 {
-   //should this function only accept capital letters e.g. "RED" not "red"? 
-   int len = strlen(p->wds[p->cw]);
+   int len = strlen(WDS_CW);
    char c[CHARBUFFLEN];
-   if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][1]== '\"'){
-      return false; //to ensure input "\"\"" returns false
+   if(sscanf(WDS_CW,"%s", c)==1 && WDS_CW[1]== '\"'){
+      return false; 
    }
-   if(len > 1){ //to avoid len-1 going out of bounds on null "" string
-      if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][len-1] == '\"'){
+   if(len > 1){ 
+      if(sscanf(WDS_CW,"%s",c)==1 && WDS_CW[0]=='\"' && WDS_CW[len-1]=='\"'){
          return true;
       }
    }
@@ -246,13 +208,13 @@ bool Ltr(Program *p, int is_var_call)
    char c[CHARBUFFLEN];
    //letter on its own
    if(is_var_call == NO_VAR_CALL){
-      if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){ 
+      if(sscanf(WDS_CW,"%[A-Z]",c)==1 && WDS_CW[1]== '\0'){ 
       return true;
       }
    }
    //letter in a variable
    if(is_var_call == VAR_CALL){
-      if(sscanf(p->wds[p->cw], "$%[A-Z]", c)==1 && p->wds[p->cw][2]== '\0'){ //2 = magic num 
+      if(sscanf(WDS_CW,"$%[A-Z]",c)==1 && WDS_CW[CHAR_OF_LTR]=='\0'){
          return true;
       }
    }
@@ -283,14 +245,11 @@ bool Varnum(Program *p)
          return true;
       }
    }
-   //ERROR("Varnum failed");
    return false;
 }
 
 bool Item(Program *p)
 {  
-   p->item_count++; //increment item_count
-   //printf("current word (item): %i\n", p->cw);
    if(Varnum(p)){
       return true;
    }
@@ -299,24 +258,18 @@ bool Item(Program *p)
          return true;
       }
    }
-   //ERROR("Item failed");
    return false;
 }
 
 bool Col(Program *p)
 {  
-   //printf("calling colour\n");
-   //printf("Col: %s\n", p->wds[p->cw]);
    if(word_matches(p, "COLOUR")){
       next_word(p);
       if(Var(p)){
          char letter = var2letter(p);
-         //printf("letter of var %c\n", letter);
          int index = char2index(letter);
-         //printf("index of letter %i\n", index);
          if(var_val_is_col(p, index)){
             char colour = get_col_val_var(p, index);
-            //printf("colour stored in var %c\n", letter);
             set_colour(p, colour);
          }
          //else, throw an error
@@ -324,18 +277,14 @@ bool Col(Program *p)
       }
       else{
          if(Word(p)){
-            //printf("is word \n");
             if(word_is_colour(p)){
-               //printf("Word is colour \n");
                char col = colour2char(p);
-               //printf("char from colour word %c\n", col);
                set_colour(p, col);
             }
             return true;
          }
       }       
    }   
-   //ERROR("Col failed");
    return false;
 }
 
@@ -344,7 +293,6 @@ bool Pfix(Program *p, stack *s) //make this function shorter
    double num = -1;
    char letter = 0;
    int var_index = 0;
-   //if word is ")", return true and don't increment p
    if(word_matches(p, ")")){
       return true;
    }
@@ -378,14 +326,12 @@ bool Pfix(Program *p, stack *s) //make this function shorter
    return false;
 }
 
-bool Items(Program *p) //counter in this function
+bool Items(Program *p) 
 {
-   //if word is "}", return true and don't increment p
    if(word_matches(p, "}")){
       return true;
    }
    if(Item(p)){
-      //the first time this is called, 
       next_word(p);
       if(Items(p)){
          return true;
@@ -407,9 +353,9 @@ bool Set(Program *p)
          letter = get_character(p);
          var_index = char2index(letter);
          next_word(p);
-         if(brace_then_pfix(p, pfix_stack)){ //assuming that var can only be number, not colour for now 
-            stack_pop(pfix_stack, &num); //get result of pfix expression from top of stack 
-            set_num_val_var(p, num, var_index); //set var to result
+         if(brace_then_pfix(p, pfix_stack)){ //assuming that var can only be number, not colour here 
+            stack_pop(pfix_stack, &num); 
+            set_num_val_var(p, num, var_index);
             stack_free(pfix_stack);
             return true;
          }
@@ -453,11 +399,8 @@ bool Loop(Program *p)
          int first_item_index = get_first_item_index(p);
          int last_item_index = get_last_item_index(p);
          int loop_jump = get_loop_jump(first_item_index, last_item_index);
-         //printf("last item index %i\n", last_item_index);
-         //printf("first item index %i\n", first_item_index);
-         //printf("loop jump %i\n", loop_jump);
          if(over_lst_inslst(p)){
-            execute_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
+            run_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
             return true;
          }
       }
@@ -505,11 +448,9 @@ bool empty_grid(Program *p)
 void init_turtle(Program *p)
 {
    if(empty_grid(p)==true){
-      //p->grid[MID_ROW][MID_COL] = WHITE;
       p->curr_y = MID_ROW;
       p->curr_x = MID_COL;
       p->curr_direction = ROTATE_CONST; 
-      //printf("current direction initialised %lf", p->curr_direction);
       set_colour(p, WHITE);
    }
 }
@@ -528,7 +469,7 @@ void print_grid_screen(Program *p)
             printf("%c", c);
          }
          else{
-            printf(" "); //print a space
+            printf(" ");
          }
       }
       printf("\n");
@@ -558,14 +499,12 @@ void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
 
 void update_y_position(Program *p, double y_delta)
 {
-   p->curr_y += y_delta; //should the coordinates be rounded to ints before printing e.g. now?
-   //printf("updated y %lf\n", p->curr_y);
+   p->curr_y += y_delta;
 }
 
 void update_x_position(Program *p, double x_delta)
 {
-   p->curr_x += x_delta; //should the coordinates be rounded to ints before printing e.g. now?
-   //printf("updated x %lf\n", p->curr_x);
+   p->curr_x += x_delta;
 }
 
 double deg2rad(double deg)
@@ -576,17 +515,12 @@ double deg2rad(double deg)
 
 void change_direction(Program *p, double new_direction)
 {
-   //printf("new direction in change dir func %lf\n", new_direction);
    double curr_direction = p->curr_direction;
-   //printf("current direction in change_direction func %lf\n", curr_direction);
    double raw_new_direction = new_direction + curr_direction; 
-   //printf("raw new direction in change_direction func %lf\n", raw_new_direction);
    p->curr_direction = validate_degree(raw_new_direction); 
-   //printf("updated direction in change dir func %lf\n", p->curr_direction);
 }
 
-//handle this when adding to current degree, to make -90 the same as 270 
-double validate_degree(double deg) //not sure where to use this function. trying to do that seems to break things, but not checking this will probably cause bugs...
+double validate_degree(double deg)
 {
    double new_angle = 0;
    if(deg - 0 < 0.00001){
@@ -604,7 +538,7 @@ double validate_degree(double deg) //not sure where to use this function. trying
    return new_angle; 
 }
 
-double neg_degree_to_pos(double deg) //fmod with 360 instead of while loop?
+double neg_degree_to_pos(double deg) 
 {
    double new_angle = deg;
    if(new_angle < 0){
@@ -638,88 +572,85 @@ int get_new_y(Program *p, double delta_y)
 
 int get_new_x(Program *p, double delta_x)
 {
-   double new_x_double = p->curr_x + delta_x; //lack of rounding of curr_x (and other rounding) causes discrepancy with Neill's plotting e.g. for octagon
-   //printf("curr_x: %lf\n", p->curr_x);
+   double new_x_double = p->curr_x + delta_x; 
    int new_x_int = round(new_x_double);
-   //printf("new_x_double: %lf\n", new_x_double);
-   //printf("new_x_int: %i\n", new_x_int);
    return new_x_int; 
 }
 
+//Bresenham line drawing algorithm
+//Adapted from https://github.com/anushaihalapathirana/Bresenham-line-drawing-algorithm/blob/master/src/index.js
 
-//this function is way too long: break it up 
-//line drawing algorithm adapted from .js here https://github.com/anushaihalapathirana/Bresenham-line-drawing-algorithm/blob/master/src/index.js
-//slight bug when line is drawn downwards e.g. for octagon. maybe end points of line are wrong? not just in-between points affected, so need to fix this...
-//make this code my own (because I used .js code as pseudocode, and it's C-like)
-//or cite the source?
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
-   //printf("y_start %i\n", y_start);
-   //printf("x_start %i\n", x_start);
-   //printf("y_end %i\n", y_end);
-   //printf("x_end %i\n", x_end);
-
-   //calculate dy and dx
-   int abs_dx = abs(x_end - x_start); 
-   int abs_dy = abs(y_end - y_start);
-   int dx = x_end - x_start;
-   int dy = y_end - y_start; 
-
-   int x = x_start; 
-   int y = y_start; 
-   //plot starting points
-   plot_pixel(p, y, x);
-
-   int error_term = 0;
+   Line *l = calloc(1, sizeof(Line));; 
+   l->abs_dx = abs(x_end - x_start); 
+   l->abs_dy = abs(y_end - y_start);
+   l->dx = x_end - x_start;
+   l->dy = y_end - y_start; 
+   l->x = x_start; 
+   l->y = y_start; 
+   plot_pixel(p, l->y, l->x);
+   l->err = 0;
    //slope < 1
-   if(abs_dx > abs_dy){
-      error_term = ERROR_CONST*abs_dy - abs_dx;
-      for(int i = 0; i < abs_dx; i++){
-         if(dx < 0){
-            x--; 
-         }
-         else{
-            x++;
-         }
-         if(error_term < 0){
-            error_term = error_term + ERROR_CONST*abs_dy; 
-         }
-         else{
-            if(dy < 0){
-               y--;
-            }
-            else{
-               y++;
-            }
-            error_term = error_term + (ERROR_CONST*abs_dy - ERROR_CONST*abs_dx);
-         }
-         plot_pixel(p, y, x);
-      }
+   if(l->abs_dx > l->abs_dy){ 
+      draw_gentle_line(p,l);
    }
-   //slope is greater than or equal to 1
-   if(abs_dx <= abs_dy){
-      error_term = ERROR_CONST*abs_dx - abs_dy;
-      for(int i = 0; i < abs_dy; i++){
-         if(dy < 0){
-            y--;
-         }
-         else{
-            y++;
-         }
-         if(error_term < 0){
-            error_term = error_term + ERROR_CONST*abs_dx;
-         }
-         else{
-            if(dx < 0){
-               x--; 
-            }
-            else{
-               x++;
-            }
-            error_term = error_term + (ERROR_CONST*abs_dx) - (ERROR_CONST*abs_dy);
-         }
-         plot_pixel(p, y, x);
+   //slope >= 1
+   if(l->abs_dx <= l->abs_dy){
+      draw_steep_line(p,l);
+   }
+   free(l);
+}
+
+void draw_steep_line(Program *p, Line *l)
+{
+   l->err = ERR_CONST*l->abs_dx - l->abs_dy;
+   for(int i = 0; i < l->abs_dy; i++){
+      if(l->dy < 0){
+         l->y--;
       }
+      else{
+         l->y++;
+      }
+      if(l->err < 0){
+         l->err = l->err + ERR_CONST * l->abs_dx;
+      }
+      else{
+         if(l->dx < 0){
+            l->x--; 
+         }
+         else{
+            l->x++;
+         }
+         l->err = l->err+(ERR_CONST*l->abs_dx)-(ERR_CONST*l->abs_dy);
+      }
+      plot_pixel(p, l->y, l->x);
+   }
+}
+
+void draw_gentle_line(Program *p, Line *l)
+{
+   l->err = ERR_CONST*l->abs_dy - l->abs_dx; 
+   for(int i = 0; i < l->abs_dx; i++){
+      if(l->dx < 0){
+         l->x--; 
+      }
+      else{
+         l->x++;
+      }
+      if(l->err < 0){
+         l->err = l->err + ERR_CONST * l->abs_dy; 
+      }
+      else{
+         if(l->dy < 0){
+            l->y--;
+         }
+         else{
+            l->y++;
+         }
+         l->err =l->err+(ERR_CONST*l->abs_dy-ERR_CONST*l->abs_dx);
+      }
+      plot_pixel(p, l->y, l->x);
    }
 }
 
@@ -745,28 +676,25 @@ bool is_y_in_bounds(double y)
    return false; 
 }
 
+bool x_and_y_in_bounds(double x, double y)
+{
+   if(is_x_in_bounds(x) && is_y_in_bounds(y)){
+      return true;
+   }
+   return false;
+}
+
 void draw_forward(Program *p, double distance)
 {
    double raw_direction = p->curr_direction;
-   //printf("raw direction %lf\n", raw_direction);
    double valid_direction = validate_degree(raw_direction);
-   //printf("valid direction %lf\n", valid_direction);
    int start_y = round(p->curr_y);
    int start_x = round(p->curr_x);
-   //printf("start y %i\n", start_y);
-   //printf("start x %i\n", start_x);
    double delta_x = get_delta_x(valid_direction, distance);
    double delta_y = get_delta_y(valid_direction, distance);
-   //printf("delta y %lf\n", delta_y);
-   //printf("delta x %lf\n", delta_x);
    int end_y = get_new_y(p, delta_y);
    int end_x = get_new_x(p, delta_x);
-   //printf("end y %i\n", end_y);
-   //printf("end x %i\n", end_x);
-
-   //round x and y values to integers 
-
-   if(is_y_in_bounds(start_y) && is_x_in_bounds(start_x) && is_y_in_bounds(end_y) && is_x_in_bounds(end_x)){ //long line
+   if(x_and_y_in_bounds(start_x, start_y) && x_and_y_in_bounds(end_x, end_y)){ 
       draw_line(p, start_y, start_x, end_y, end_x);
    }
    else{
@@ -811,7 +739,7 @@ void set_colour(Program *p, char col)
    p->colour = col; 
 }
 
-bool word_is_colour(Program *p) //make this function shorter
+bool word_is_colour(Program *p)
 {
    if(word_matches(p, "\"RED\"")){
       return true;
@@ -840,7 +768,7 @@ bool word_is_colour(Program *p) //make this function shorter
    return false; 
 }
 
-char colour2char(Program *p) //make this function shorter
+char colour2char(Program *p)
 {
    if(word_matches(p, "\"RED\"")){
       return RED;
@@ -962,24 +890,6 @@ bool stack_peek(stack* s, stacktype* d)
    return true;
 }
 
-//this function might be useful for testing?
-/*
-void stack_tostring(stack* s, char* str)
-{
-   char tmp[ELEMSIZE];
-   str[0] = '\0';
-   if((s==NULL) || (s->size <1)){
-      return;
-   }
-   for(int i=s->size-1; i>=0; i--){
-      sprintf(tmp, FORMATSTR, s->a[i]); 
-      strcat(str, tmp);
-      strcat(str, "|");
-   }
-   str[strlen(str)-1] = '\0';
-}
- */
-
 bool stack_free(stack* s)
 {
    if(s==NULL){
@@ -996,8 +906,7 @@ void set_num_val_var(Program *p, double val, int index)
 {
    p->vars[index].is_set = true;
    p->vars[index].type = NUMBER;
-   p->vars[index].data.num = val; //set variable[index] to val
-   //val = 0; //says it's unused otherwise :(
+   p->vars[index].data.num = val; 
 }
 
 double get_num_val_var(Program *p, int index)
@@ -1018,7 +927,6 @@ double get_num_val_var(Program *p, int index)
 void set_col_val_var(Program *p, int index)
 {  
    char colour = colour2char(p);
-   //printf("setting var to this col %c\n", colour);
    p->vars[index].is_set = true;
    p->vars[index].type = CHAR;
    p->vars[index].data.col = colour;
@@ -1074,7 +982,7 @@ char get_character(Program *p)
 
 char var2letter(Program *p)
 {
-   char letter = p->wds[p->cw][1]; //i.e. 2nd char of current word e.g. if cw is $A, 2nd char is 'A'
+   char letter = p->wds[p->cw][1];
    return letter; 
 }
 
@@ -1084,15 +992,12 @@ int get_last_item_index(Program *p)
 {
    int cnt = 0;
    int base_word_index = p->cw; 
-   //printf("base word index (last) %i\n", base_word_index);
    while(p->wds[p->cw][0] != '}'){
       next_word(p);
       cnt++;
-      //printf("count (last) %i\n", cnt);
    }
    int last_item_index = base_word_index + cnt - 1; 
-   p->cw = base_word_index;  //reset current word 
-   //printf("base word index (last) reset %i\n", base_word_index);
+   p->cw = base_word_index;
    return last_item_index; 
 }
 
@@ -1100,15 +1005,12 @@ int get_first_item_index(Program *p)
 {
    int cnt = 0; 
    int base_word_index = p->cw; 
-   //printf("base word index (first)%i\n", base_word_index);
    while(p->wds[p->cw][0] != '{'){
       next_word(p);
       cnt++;
-      //printf("count (first) %i\n", cnt);
    }
    int first_item_index = base_word_index + cnt + 1; 
-   p->cw = base_word_index; //reset current word
-   //printf("base word index (first) reset %i\n", base_word_index);
+   p->cw = base_word_index;
    return first_item_index; 
 }
 
@@ -1119,31 +1021,22 @@ int get_loop_jump(int first_item_index, int last_item_index)
    return base_loop_jump; 
 }
 
-//pass local variables into this function from loop func
-void execute_loop(Program *p, int first_item_index, int last_item_index, int loop_var_index, int loop_jump)
+void run_loop(Program *p, int itm_indx_1, int itm_indx_end, int vr_indx, int jmp)
 {
    double num = -1;
-   //p->cw = first_item_index; //go to first item in list
-
-   for(int curr_word_index = first_item_index; curr_word_index < last_item_index + 1; curr_word_index++){
-      //jump to current index 
-      p->cw = curr_word_index; 
-      //printf("current word in loop %s\n", p->wds[p->cw]);
+   for(int cw_indx = itm_indx_1; cw_indx < itm_indx_end + 1; cw_indx++){
+      p->cw = cw_indx; 
       if(Item(p)){
          if(get_double(p, &num)){
-            set_num_val_var(p, num, loop_var_index);
+            set_num_val_var(p, num, vr_indx);
          }
          if(word_is_colour(p)){
-            //printf("Item is colour \n");
-            set_col_val_var(p, loop_var_index);
+            set_col_val_var(p, vr_indx);
          }
       }
-      //jump to first instruction word 
-      p->cw += loop_jump;
-      
-      if(Inslst(p)){ //i.e. we've hit "END"
-         //decrement loop_jump
-         loop_jump--;   
+      p->cw += jmp;
+      if(Inslst(p)){ 
+         jmp--;   
       }
    }
 }
@@ -1192,7 +1085,6 @@ bool var_val_is_col(Program *p, int index)
 
 void clear_buff(Program *p)
 {
-   //zero out first 100 words of buffer 
    for(int i = 0; i < MAXNUMTOKENS; i++){
       strcpy(p->wds[i], "");
    }
@@ -1208,18 +1100,17 @@ void next_word(Program *p)
    p->cw += 1;
 }
 
-void str2buff(Program *p, char tst[TSTSTRLEN], int numwords) 
+void str2buff(Program *p, char tst[TSTSTRLEN], int num_wds) 
 {
-   int word_index = 0; 
-   int string_index = 0; 
-   while(sscanf(tst + string_index, "%s", p->wds[word_index])==1 && word_index<numwords-1){ //why -1? this doesn't make sense to me
+   int wrd_indx = 0; 
+   int str_indx = 0; 
+   while(sscanf(tst+str_indx,"%s",p->wds[wrd_indx])==1 && wrd_indx<num_wds-1){ 
       //move index to start of next word 
-      while(isgraph(tst[string_index])){
-         string_index++;
+      while(isgraph(tst[str_indx])){
+         str_indx++;
       }
-      string_index++; //deleted parsing tests for now. probably need to add them back in (copy from parse.c)
-//increment once more to get past space
-      word_index++;
+      str_indx++; //increment once more to get past space
+      wrd_indx++;
    }
 }
 
@@ -1231,17 +1122,12 @@ bool word_matches(Program *p, char match[MAXTOKENSIZE])
    return false; 
 }
 
-//IMPORTANT: make sure testing doesn't print loads of irrelevant grids /stuff to the screen
 void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
    
-   // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
-
-   // To do: make assert testing exhaustive
    char tst[ROW_HEIGHT*COL_WIDTH+1];
    // *** INTERPRETING TESTS ***
-
 
    //get_character 
    

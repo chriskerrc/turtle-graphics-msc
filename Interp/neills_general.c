@@ -1,3 +1,5 @@
+//Neill's code, taken from here: https://github.com/csnwc/ADTs/blob/main/General/general.c
+
 #include "interp.h"
 
 void on_error(const char* s)

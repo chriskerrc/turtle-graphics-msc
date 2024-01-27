@@ -9,18 +9,15 @@
 #define MAXTOKENSIZE 20
 #define TSTSTRLEN 100
 #define CHARBUFFLEN 100
-#define ERROR(PHRASE) { fprintf(stderr, \
-          "Fatal Error %s occurred in %s, line %d\n", PHRASE, \
-          __FILE__, __LINE__); \
-          exit(EXIT_FAILURE); }
-//take the above out if not used
 #define MAXFILENAME 50
 #define VAR_CALL 1
 #define NO_VAR_CALL 0
+#define WDS_CW p->wds[p->cw]
+#define CHAR_OF_LTR 2
 
 struct prog{
    char wds[MAXNUMTOKENS][MAXTOKENSIZE];
-   int cw; // Current Word <-rename to something readable
+   int cw;
 };
 typedef struct prog Program;
 
@@ -47,7 +44,7 @@ bool over_lst_inslst(Program *p);
 //helper functions
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
-void str2buff(Program *p, char* tst, int numwords);
+void str2buff(Program *p, char* tst, int num_wds);
 void rst_pt(Program *p);
 void next_word(Program *p); 
 bool word_matches(Program *p, char match[MAXTOKENSIZE]);

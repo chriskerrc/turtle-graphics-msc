@@ -12,11 +12,6 @@
 #define MAXTOKENSIZE 20
 #define TSTSTRLEN 100
 #define CHARBUFFLEN 100
-#define ERROR(PHRASE) { fprintf(stderr, \
-          "Fatal Error %s occurred in %s, line %d\n", PHRASE, \
-          __FILE__, __LINE__); \
-          exit(EXIT_FAILURE); }
-//take the above out if not used
 #define MAXFILENAME 50
 #define VAR_CALL 1
 #define NO_VAR_CALL 0
@@ -36,14 +31,17 @@
 #define PI 3.14159265358979323846
 #define RAD_CONST 180
 #define MAX_ANGLE 360
-#define ERROR_CONST 2
+#define ERR_CONST 2
 #define ROTATE_CONST -90
 #define OUT_FILE 2
 #define A_TO_Z 26
 #define BASE_LETTER 'A'
 #define LAST_TO_INS 2
+#define CHAR_OF_LTR 2
+#define SCREEN_OUT_ARGS 2
+#define TXT_OUT_ARGS 3
+#define WDS_CW p->wds[p->cw]
 
-//TO DO: put Neill's stuff in different header file if possible 
 //Neill's stack (specific.h)
 #define MAXINPUT 1000
 #define FORMATSTR "%i"
@@ -121,10 +119,20 @@ struct prog{
    int loop_jump; 
    int first_item_index;
    int last_item_index; 
-   int item_count; 
    bool exit_fail;
 };
 typedef struct prog Program;
+
+struct line{
+   int abs_dx;
+   int abs_dy; 
+   int dx; 
+   int dy; 
+   int x;
+   int y; 
+   int err;
+};
+typedef struct line Line; 
 
 char str[ROW_HEIGHT*COL_WIDTH+1];
 
@@ -153,7 +161,7 @@ bool over_lst_inslst(Program *p);
 
 //parser helper functions
 void clear_buff(Program *p);
-void str2buff(Program *p, char* tst, int numwords);
+void str2buff(Program *p, char* tst, int num_wds);
 void rst_pt(Program *p);
 void next_word(Program *p); 
 bool word_matches(Program *p, char match[MAXTOKENSIZE]);
@@ -174,6 +182,8 @@ double neg_degree_to_pos(double deg);
 double get_delta_y(double direction, double distance);
 double get_delta_x(double direction, double distance);
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end);//Bresenham line algorithm
+void draw_gentle_line(Program *p, Line *l);
+void draw_steep_line(Program *p, Line *l);
 void draw_forward(Program *p, double distance);
 int get_new_y(Program *p, double delta_y);
 int get_new_x(Program *p, double delta_x);
@@ -198,10 +208,11 @@ bool var_val_is_num(Program *p, int index);
 bool var_val_is_col(Program *p, int index);
 int get_last_item_index(Program *p);
 int get_first_item_index(Program *p);
-int get_loop_jump(int first_item_index, int last_item_index); //get initial loop jump i.e. number to add to index first list item to get to index first ins 
-void execute_loop(Program *p, int first_item_index, int last_item_index, int loop_var_index, int loop_jump); //to make this shorter could I pass these params in a struct instead?
+int get_loop_jump(int first_item_index, int last_item_index); 
+void run_loop(Program *p, int itm_indx_1, int itm_indx_end, int vr_indx, int jmp);
 bool get_double(Program *p, double *result);
 void run_simple_screen(Program *p);
+bool x_and_y_in_bounds(double x, double y);
 
 
 //Test function

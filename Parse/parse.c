@@ -1,23 +1,4 @@
-// is the parser returning correctly? currently it returns 0 success for parsed, 1 fail for not parsed?
-
-// do research on how to test 
-// e.g. black box testing: can I break your program, not knowing how it works 
-
-// consider substituting "p->wds[p->cw]" with something more readable
-// relatedly, watch out for long lines i.e. && separated expressions in functions
-
-// 3 Jan: ran valgrind, sanitizer and all flags on lab machine. Also tried gcc as well as clang. All good
-
-// what happens if there are no spaces between "words" in the ttl file. should parse fail?
-
-// read all Teams posts and ensure I've covered everything
-
-//check I've handled reading in .ttl files from TTLs directory correctly 
-
-//add meaningful error messages for parse failure (without exiting/crashing program)
-
 #include "parse.h"
-
 
 int main(int argc, char *argv[])
 {
@@ -38,28 +19,24 @@ int main(int argc, char *argv[])
    }
    
    while(fscanf(fp, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
-      //printf("%s\n", prog->wds[i]); //seems to keep reading in after it gets to end of file?? 
       i++;
    }
    
    if(Prog(prog)){
-      //printf("Parsed OK\n");
       fclose(fp);
       free(prog); 
       return EXIT_SUCCESS;
    }
      
-    //printf("Not parsed OK\n");
-    fclose(fp);
-    free(prog); 
-    return EXIT_FAILURE;
+   printf("Failed to parse\n");
+   fclose(fp);
+   free(prog); 
+   return EXIT_FAILURE;
 }
 
 bool Prog(Program *p)
 {
-   //printf("Prog word: %s\n", p->wds[p->cw]);
    if(!word_matches(p, "START")){
-      //ERROR("No START statement ?");
       return false;
    }
    next_word(p);
@@ -72,7 +49,6 @@ bool Prog(Program *p)
 
 bool Inslst(Program *p)
 {
-   //if word is "END", return true and don't increment p
    if(word_matches(p, "END")){
       return true;
    }
@@ -82,7 +58,6 @@ bool Inslst(Program *p)
          return true;
       }
    }
-   //ERROR("Inslst failed");
    return false;
 }
 
@@ -103,20 +78,17 @@ bool Ins(Program *p)
    else if(Set(p)){
       return true; 
    }
-   //ERROR("Ins failed");
    return false;
 }
 
 bool Fwd(Program *p)
 {
-   //printf("%s\n", p->wds[p->cw]);
    if(word_matches(p, "FORWARD")){ 
       next_word(p);
       if(Varnum(p)){
          return true;
       }       
    }   
-   //ERROR("Fwd failed");
    return false;
 }
 
@@ -128,25 +100,22 @@ bool Rgt(Program *p)
          return true;
       }       
    }   
-   //ERROR("Rgt failed");
    return false;
 }
 
 bool Num(Program *p)
 {
    double d;
-   if(sscanf(p->wds[p->cw], "%lf", &d)==1){  //for every sscanf like this, replace p->wds[p->cw] with function that hides this ugly syntax
+   if(sscanf(p->wds[p->cw], "%lf", &d)==1){ 
       return true;
    }
-   //printf("%lf", d);
-   //ERROR("Num failed");
    return false;
 }
 
 bool Op(Program *p)
 {   
    char c[CHARBUFFLEN];
-   if(sscanf(p->wds[p->cw], "%[+*-/]", c)==1){    //magic num
+   if(sscanf(p->wds[p->cw], "%[+*-/]", c)==1){   
       return true;
    }
    return false;
@@ -154,14 +123,14 @@ bool Op(Program *p)
 
 bool Word(Program *p) // long lines
 {
-   //should this function only accept capital letters e.g. "RED" not "red"? 
-   int len = strlen(p->wds[p->cw]);
+   //should this function only accept capital letters e.g. "RED" not "red"? - comment to say what I did 
+   int len = strlen(WDS_CW);
    char c[CHARBUFFLEN];
-   if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][1]== '\"'){
-      return false; //to ensure input "\"\"" returns false
+   if(sscanf(WDS_CW, "%s", c)==1 && WDS_CW[1]== '\"'){
+      return false; 
    }
-   if(len > 1){ //to avoid len-1 going out of bounds on null "" string
-      if(sscanf(p->wds[p->cw], "%s", c)==1 && p->wds[p->cw][0]== '\"' && p->wds[p->cw][len-1] == '\"'){
+   if(len > 1){ 
+      if(sscanf(WDS_CW,"%s",c)==1 && WDS_CW[0]=='\"' && WDS_CW[len-1]=='\"'){
          return true;
       }
    }
@@ -173,13 +142,13 @@ bool Ltr(Program *p, int is_var_call)
    char c[CHARBUFFLEN];
    //letter on its own
    if(is_var_call == NO_VAR_CALL){
-      if(sscanf(p->wds[p->cw], "%[A-Z]", c)==1 && p->wds[p->cw][1]== '\0'){ 
+      if(sscanf(WDS_CW, "%[A-Z]", c)==1 && WDS_CW[1]== '\0'){ 
       return true;
       }
    }
    //letter in a variable
    if(is_var_call == VAR_CALL){
-      if(sscanf(p->wds[p->cw], "$%[A-Z]", c)==1 && p->wds[p->cw][2]== '\0'){ //2 = magic num 
+      if(sscanf(WDS_CW, "$%[A-Z]", c)==1 && WDS_CW[CHAR_OF_LTR]== '\0'){ 
          return true;
       }
    }
@@ -210,7 +179,6 @@ bool Varnum(Program *p)
          return true;
       }
    }
-   //ERROR("Varnum failed");
    return false;
 }
 
@@ -224,7 +192,6 @@ bool Item(Program *p)
          return true;
       }
    }
-   //ERROR("Item failed");
    return false;
 }
 
@@ -232,8 +199,8 @@ bool Col(Program *p)
 {
    //Question: should this function enforce that word is valid colour?
    //Currently, nothing in the parser enforces what is valid colour, but this is part of the grammar...
+   //comment about what I did here...
    
-   //printf("Col: %s\n", p->wds[p->cw]);
    if(word_matches(p, "COLOUR")){
       next_word(p);
       if(Var(p)){
@@ -245,13 +212,11 @@ bool Col(Program *p)
          }
       }       
    }   
-   //ERROR("Col failed");
    return false;
 }
 
 bool Pfix(Program *p)
 {
-   //if word is ")", return true and don't increment p
    if(word_matches(p, ")")){
       return true;
    }
@@ -270,13 +235,11 @@ bool Pfix(Program *p)
          }
       }
    }
-   //ERROR("Pfix failed");
    return false;
 }
 
 bool Items(Program *p)
 {
-   //if word is "}", return true and don't increment p
    if(word_matches(p, "}")){
       return true;
    }
@@ -368,7 +331,6 @@ bool get_arg_filename(int argc, char *argv[], char* filename)
 
 void clear_buff(Program *p)
 {
-   //zero out first 100 words of buffer 
    for(int i = 0; i < MAXNUMTOKENS; i++){
       strcpy(p->wds[i], "");
    }
@@ -384,17 +346,17 @@ void next_word(Program *p)
    p->cw += 1;
 }
 
-void str2buff(Program *p, char tst[TSTSTRLEN], int numwords) 
+void str2buff(Program *p, char tst[TSTSTRLEN], int num_wds) 
 {
-   int word_index = 0; 
-   int string_index = 0; 
-   while(sscanf(tst + string_index, "%s", p->wds[word_index])==1 && word_index<numwords-1){ //why -1? this doesn't make sense to me
+   int wrd_indx = 0; 
+   int str_indx = 0; 
+   while(sscanf(tst+str_indx,"%s",p->wds[wrd_indx])==1 && wrd_indx<num_wds-1){ 
       //move index to start of next word 
-      while(isgraph(tst[string_index])){
-         string_index++;
+      while(isgraph(tst[str_indx])){
+         str_indx++;
       }
-      string_index++; //increment once more to get past space
-      word_index++;
+      str_indx++; //increment once more to get past space
+      wrd_indx++;
    }
 }
 
