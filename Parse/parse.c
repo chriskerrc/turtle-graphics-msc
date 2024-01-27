@@ -220,7 +220,6 @@ bool Pfix(Program *p)
    if(word_matches(p, ")")){
       return true;
    }
-   
    if(Op(p)){
       next_word(p);
       if(Pfix(p)){
@@ -254,14 +253,16 @@ bool Items(Program *p)
 
 bool Set(Program *p)
 { 
-   if(word_matches(p, "SET")){
-      next_word(p);
-      if(Ltr(p, NO_VAR_CALL)){
-         next_word(p);
-         if(brace_then_pfix(p)){
-            return true;
-         }
-      }
+   if(!word_matches(p, "SET")){
+      return false; 
+   }
+   next_word(p);
+   if(!Ltr(p, NO_VAR_CALL)){
+      return false; 
+   }
+   next_word(p);
+   if(brace_then_pfix(p)){
+      return true;
    }
    return false; 
 }
@@ -290,32 +291,35 @@ bool Lst(Program *p)
 
 bool Loop(Program *p)
 {
-   if(word_matches(p, "LOOP")){
-      next_word(p);
-      if(Ltr(p, NO_VAR_CALL)){
-         next_word(p);
-         if(over_lst_inslst(p)){
-            return true;
-         }
-      }
+   if(!word_matches(p, "LOOP")){
+      return false; 
+   }
+   next_word(p);
+   if(!Ltr(p, NO_VAR_CALL)){
+      return false; 
+   }
+   next_word(p);
+   if(over_lst_inslst(p)){
+      return true;
    }
    return false; 
 }
 
 bool over_lst_inslst(Program *p)
 {
-   if(word_matches(p, "OVER")){
-      next_word(p);
-      if(Lst(p)){
-         next_word(p);
-         if(Inslst(p)){
-            return true;
-         }
-      }
+   if(!word_matches(p, "OVER")){
+      return false;
+   }
+   next_word(p);
+   if(!Lst(p)){
+      return false;
+   }
+   next_word(p);
+   if(Inslst(p)){
+      return true;
    }
    return false;
 }
-
 
 //HELPER FUNCTIONS
 

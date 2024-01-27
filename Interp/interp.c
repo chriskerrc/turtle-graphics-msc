@@ -1,6 +1,5 @@
 #include "interp.h"
-#include "../neillsimplescreen.c" //don't know if I should be including C files - handle with makefile instead
-#include "neills_general.c"
+#include "../neillsimplescreen.h"
 
 //run sanitizer and valgrind 
 //make interpreter fail for invalid colour "ORANGE" etc. 
@@ -49,7 +48,7 @@ int main(int argc, char *argv[]) //make main function shorter
       return EXIT_SUCCESS;
    }
 
-   printf("Failed to interpret\n");
+   printf("Failed to interpret (in main)\n");
    fclose(fpin);
    free(prog); 
    return EXIT_FAILURE;
@@ -105,51 +104,43 @@ bool Ins(Program *p)
 //found a bug where I was calling wrong function get_character, instead of var2letter, which was causing $ char to be passed to char2index
 //this was producing index = -29, which was causing out of bounds
 //to do: add some bounds checking in char2index
-bool Fwd(Program *p) //too deeply nested
+bool Fwd(Program *p) 
 {   
    double distance = 0;
-   
-   /*
-   if(!word_matches(p, "FORWARD")) {
+   if(!word_matches(p, "FORWARD")){ 
       return false;
    }
    next_word(p);
-   */
-  //apply this kind of stuff to make my functions less deeply nested
-
-   if(word_matches(p, "FORWARD")){  
-      next_word(p);
-      if(Varnum(p)){ 
-         if(Num(p)){
-            if(get_double(p, &distance)){
-               draw_forward(p, distance);
-               if(p->is_text_output==false){
-                  run_simple_screen(p);
-               }
-               return true;
-            }
+   if(!Varnum(p)){ 
+      return false;
+   }
+   if(Num(p)){
+      if(get_double(p, &distance)){
+         draw_forward(p, distance);
+         if(p->is_text_output==false){
+            run_simple_screen(p);
          }
-         if(Var(p)){ //need to fail interpreter if it's not set to anything (add a boolean flag when setting vars?)
-            char letter = var2letter(p);
-            
-            int var_index = char2index(letter);
-            if(var_val_is_num(p, var_index)){
-               double distance = get_num_val_var(p, var_index); 
-               draw_forward(p, distance);
-               if(p->is_text_output==false){
-                 run_simple_screen(p);
-               }
-               return true;
-            }
-            else{
-               //TO DO: EXIT FAILURE    
-            }
+      return true;
+      }
+   }
+   if(Var(p)){ //need to fail interpreter if it's not set to anything)
+      char letter = var2letter(p);
+      int var_index = char2index(letter);
+      if(var_val_is_num(p, var_index)){
+         double distance = get_num_val_var(p, var_index); 
+         draw_forward(p, distance);
+         if(p->is_text_output==false){
+            run_simple_screen(p);
          }
          return true;
-      }       
-   }   
+         }
+      else{ 
+         printf("Failed to interpret: variable is not num?");  
+         return EXIT_FAILURE;  
+      }
+   }
    return false;
-}
+}       
 
 bool Rgt(Program *p) //too deeply nested
 {
@@ -263,30 +254,32 @@ bool Item(Program *p)
 
 bool Col(Program *p)
 {  
-   if(word_matches(p, "COLOUR")){
-      next_word(p);
-      if(Var(p)){
-         char letter = var2letter(p);
-         int index = char2index(letter);
-         if(var_val_is_col(p, index)){
-            char colour = get_col_val_var(p, index);
-            set_colour(p, colour);
-         }
-         //else, throw an error
-         return true;
+   if(!word_matches(p, "COLOUR")){
+      return false;
+   }
+   next_word(p);
+   if(Var(p)){
+      char letter = var2letter(p);
+      int index = char2index(letter);
+      if(var_val_is_col(p, index)){
+         char colour = get_col_val_var(p, index);
+         set_colour(p, colour);
       }
-      else{
-         if(Word(p)){
-            if(word_is_colour(p)){
-               char col = colour2char(p);
-               set_colour(p, col);
-            }
-            return true;
-         }
-      }       
-   }   
+      //else, throw an error
+      return true;
+   }
+   else{
+      if(!Word(p)){
+         return false;
+      }
+      if(word_is_colour(p)){
+         char col = colour2char(p);
+         set_colour(p, col);
+      }
+      return true;
+   }
    return false;
-}
+}         
 
 bool Pfix(Program *p, stack *s) //make this function shorter
 {
@@ -296,7 +289,6 @@ bool Pfix(Program *p, stack *s) //make this function shorter
    if(word_matches(p, ")")){
       return true;
    }
-   
    if(Op(p)){
       calc_binary_expression(p, s);
       next_word(p);
@@ -305,24 +297,25 @@ bool Pfix(Program *p, stack *s) //make this function shorter
       }
    }
    else{
-      if(Varnum(p)){
-         if(Num(p)){
-            if(get_double(p, &num)){
-               stack_push(s, num);
-            }
-         }
-         if(Var(p)){ //this assumes var is a number, not a colour - check type here and fail interp if it's not a num (I think...)
-            letter = var2letter(p);
-            var_index = char2index(letter);
-            num = get_num_val_var(p, var_index);
+      if(!Varnum(p)){
+         return false;
+      }
+      if(Num(p)){
+         if(get_double(p, &num)){
             stack_push(s, num);
          }
-         next_word(p);
-         if(Pfix(p, s)){
-            return true;
-         }
       }
-   } 
+      if(Var(p)){ //this assumes var is a number, not a colour - check type here and fail interp if it's not a num (I think...)
+         letter = var2letter(p);
+         var_index = char2index(letter);
+         num = get_num_val_var(p, var_index);
+         stack_push(s, num);
+      }
+      next_word(p);
+      if(Pfix(p, s)){
+         return true;
+      }
+   }
    return false;
 }
 
@@ -347,24 +340,28 @@ bool Set(Program *p)
    char letter = 0;
    stack *pfix_stack;
    pfix_stack = stack_init();
-   if(word_matches(p, "SET")){
-      next_word(p);
-      if(Ltr(p, NO_VAR_CALL)){
-         letter = get_character(p);
-         var_index = char2index(letter);
-         next_word(p);
-         if(brace_then_pfix(p, pfix_stack)){ //assuming that var can only be number, not colour here 
-            stack_pop(pfix_stack, &num); 
-            set_num_val_var(p, num, var_index);
-            stack_free(pfix_stack);
-            return true;
-         }
-      }
+   if(!word_matches(p, "SET")){
+      stack_free(pfix_stack);
+      return false;
+   }
+   next_word(p);
+   if(!Ltr(p, NO_VAR_CALL)){
+      stack_free(pfix_stack);
+      return false;
+   }
+   letter = get_character(p);
+   var_index = char2index(letter);
+   next_word(p);
+   if(brace_then_pfix(p, pfix_stack)){ //assuming that var can only be number, not colour here: if it's not number, exit fail
+      stack_pop(pfix_stack, &num); 
+      set_num_val_var(p, num, var_index);
+      stack_free(pfix_stack);
+      return true;
    }
    stack_free(pfix_stack);
    return false; 
 }
-
+   
 bool brace_then_pfix(Program *p, stack *s)
 {
    if(word_matches(p, "(")){
@@ -389,30 +386,34 @@ bool Lst(Program *p)
 
 bool Loop(Program *p)
 {  
-   if(word_matches(p, "LOOP")){
-      next_word(p);
-      if(Ltr(p, NO_VAR_CALL)){
-         char letter = get_character(p);
-         int var_index = char2index(letter);
-         int loop_var_index = var_index; 
-         next_word(p);
-         int first_item_index = get_first_item_index(p);
-         int last_item_index = get_last_item_index(p);
-         int loop_jump = get_loop_jump(first_item_index, last_item_index);
-         if(over_lst_inslst(p)){
-            run_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
-            return true;
-         }
-      }
+   if(!word_matches(p, "LOOP")){
+      return false; 
    }
-   
+   next_word(p);
+   if(!Ltr(p, NO_VAR_CALL)){
+      return false; 
+   }
+   char letter = get_character(p);
+   int var_index = char2index(letter);
+   int loop_var_index = var_index; 
+   next_word(p);
+   int first_item_index = get_first_item_index(p);
+   int last_item_index = get_last_item_index(p);
+   int loop_jump = get_loop_jump(first_item_index, last_item_index);
+   if(over_lst_inslst(p)){
+      run_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
+      return true;
+   }
    return false; 
 }
+
 //this is an important bug I found
 bool over_lst_inslst(Program *p) //need make this function only parse, not interpret: pass flags to the child functions to not do anything
 //doing stuff with ins is handled by execute_loop
-{
-   /*
+{ 
+   //next_word(p); //temporary nonsense to silence warning....................................
+   //p->cw -= 1;
+
    if(word_matches(p, "OVER")){
       next_word(p);
       if(Lst(p)){
@@ -423,7 +424,7 @@ bool over_lst_inslst(Program *p) //need make this function only parse, not inter
       }
    }
    return false;
-   */
+   
   return true;
 }
 
@@ -578,7 +579,6 @@ int get_new_x(Program *p, double delta_x)
 }
 
 //Bresenham line drawing algorithm
-//Adapted from https://github.com/anushaihalapathirana/Bresenham-line-drawing-algorithm/blob/master/src/index.js
 
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
@@ -698,7 +698,7 @@ void draw_forward(Program *p, double distance)
       draw_line(p, start_y, start_x, end_y, end_x);
    }
    else{
-      printf("Not in bounds\n");
+      //printf("Not in bounds\n");
    }
    update_y_position(p, delta_y);
    update_x_position(p, delta_x);
@@ -914,9 +914,9 @@ double get_num_val_var(Program *p, int index)
    double val = -1;
    if(p->vars[index].is_set == false){
       p->exit_fail = true;
-      neillclrscrn();
-      printf("Failed to interpret: variable is not set? \n");
-      return EXIT_FAILURE;
+      //neillclrscrn();
+      //printf("Failed to interpret: variable is not set? \n");
+      //return EXIT_FAILURE;
    }
    if(p->vars[index].type == NUMBER){
        val = p->vars[index].data.num;
@@ -937,9 +937,9 @@ char get_col_val_var(Program *p, int index)
    char colour = 0;
    if(p->vars[index].is_set == false){
       p->exit_fail = true;
-      neillclrscrn();
-      printf("Failed to interpret: variable is not set? \n");
-      return EXIT_FAILURE;
+      //neillclrscrn();
+      //printf("Failed to interpret: variable is not set? \n");
+      //return EXIT_FAILURE;
    }
    if(p->vars[index].type == CHAR){
        colour = p->vars[index].data.col;
