@@ -56,7 +56,9 @@ int main(int argc, char *argv[]) //make main function shorter
 
 bool Prog(Program *p)
 {
-   neillclrscrn(); 
+   if(p->is_text_output == false){
+      neillclrscrn(); 
+   }
    if(!word_matches(p, "START")){
       return false;
    }
