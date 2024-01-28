@@ -18,7 +18,7 @@ For the parser, all my assert testing is functional in the submitted file.
 
 I started off assert testing my interpreter functions as I went. Unfortunately, I ran out of time to test much of my Interpreter, which leaves a gap in my testing. 
 
-I found that the assert testing I did for the parser was leading to lots of lines being drawn to the screen, so I wrapped my testing for the interpreter in a boolean flag ("production") at the top of main. This flag is switched off for the production version. 
+I found that the assert testing I did for the parser was leading to irrelevant things being printed to the screen, so I wrapped my testing for the interpreter in a boolean flag ("production") at the top of main. This flag is switched off for the production version. 
 
 ##Lessons learned 
 
