@@ -214,6 +214,7 @@ bool get_double(Program *p, double *result);
 void run_simple_screen(Program *p);
 bool x_and_y_in_bounds(double x, double y);
 bool list_is_empty(Program *p);
+bool var_is_set(Program *p, int index);
 
 //Test function
 void test(void);

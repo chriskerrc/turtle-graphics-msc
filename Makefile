@@ -44,6 +44,8 @@ run: all
 	./interp_s TTLs/hypno.ttl out_hypno.txt
 	./interp_s TTLs/5x5.ttl out_5x5.txt
 	./interp_s TTLs/downarrow.ttl out_downarrow.txt
+	./interp_s TTLs/ok_parse_fail_interp.ttl out_ok_parse_fail_interp.txt
+   #./interp_s TTLs/ok_parse_fail_interp.ttl out_ok_parse_fail_interp.txt
 
 clean:
 	rm -f parse_s interp_s out_*.txt out_*.ps out_*.pdf

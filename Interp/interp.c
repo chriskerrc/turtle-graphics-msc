@@ -125,9 +125,12 @@ bool Fwd(Program *p)
       return true;
       }
    }
-   if(Var(p)){ //need to fail interpreter if it's not set to anything)
+   if(Var(p)){ 
       char letter = var2letter(p);
       int var_index = char2index(letter);
+      if(!var_is_set(p, var_index)){
+         return false; 
+      }
       if(var_val_is_num(p, var_index)){
          double distance = get_num_val_var(p, var_index); 
          draw_forward(p, distance);
@@ -1094,6 +1097,14 @@ bool list_is_empty(Program *p)
    }
    while(!word_matches(p, "END")){
       p->cw++;
+   }
+   return true;
+}
+
+bool var_is_set(Program *p, int index)
+{
+   if(p->vars[index].is_set != true){
+      return false;
    }
    return true;
 }
