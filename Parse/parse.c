@@ -18,20 +18,19 @@ int main(int argc, char *argv[])
        exit(EXIT_FAILURE);
    }
    
-   while(fscanf(fp, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
+   while(fscanf(fp, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){
       i++;
    }
    
    if(Prog(prog)){
       fclose(fp);
       free(prog); 
-      return EXIT_SUCCESS;
+      exit(EXIT_SUCCESS);
    }
-     
-   printf("Failed to parse\n");
+   fprintf(stderr, "Failed to parse\n");
    fclose(fp);
    free(prog); 
-   return EXIT_FAILURE;
+   exit(EXIT_FAILURE);
 }
 
 bool Prog(Program *p)
@@ -121,9 +120,8 @@ bool Op(Program *p)
    return false;
 }
 
-bool Word(Program *p) // long lines
+bool Word(Program *p) //this function accepts any word scanned by sscanf with " " round it, and doesn't enforce capital letters
 {
-   //should this function only accept capital letters e.g. "RED" not "red"? - comment to say what I did 
    int len = strlen(WDS_CW);
    char c[CHARBUFFLEN];
    if(sscanf(WDS_CW, "%s", c)==1 && WDS_CW[1]== '\"'){
@@ -195,12 +193,8 @@ bool Item(Program *p)
    return false;
 }
 
-bool Col(Program *p)
-{
-   //Question: should this function enforce that word is valid colour?
-   //Currently, nothing in the parser enforces what is valid colour, but this is part of the grammar...
-   //comment about what I did here...
-   
+bool Col(Program *p) //this function doesn't enforce that colours are from the correct list of colours
+{   
    if(word_matches(p, "COLOUR")){
       next_word(p);
       if(Var(p)){
@@ -215,7 +209,7 @@ bool Col(Program *p)
    return false;
 }
 
-bool Pfix(Program *p)
+bool Pfix(Program *p) //this function doesn't enforce a correct postfix i.e. "SET C ( + + + )" is valid
 {
    if(word_matches(p, ")")){
       return true;
@@ -376,10 +370,6 @@ void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
 
-   // To do: reduce number of times I clear buffer and reset pointer. Much of the time this is redundant and probably slows things down
-
-   // To do: make assert testing exhaustive
-
    //NON-RECURSIVE FUNCTIONS
    
    //Num
@@ -395,8 +385,6 @@ void test(void)
    
    strcpy(prog->wds[0], "d.13"); //not a double
    assert(Num(prog)==false);
-
-   //don't need to care about case 17.d etc. As long as it scans a number, it's fine
 
    //Op 
    
@@ -511,10 +499,6 @@ void test(void)
    // this is a bug I found through assert testing: previously input "\"\"" returned true
 
    //found significant bug where "\"RED" evaluates to true i.e. missing second "
-
-   //account for case e.g. "RED YELLOW": function should fail for this (I think?)
-
-   //what about case "\"RED YELLOW\"" or "\"RED \"YELLOW\"" etc: can use these as examples of bugs found through testing
 
    //RECURSIVE FUNCTIONS
 
@@ -940,8 +924,6 @@ void test(void)
    str2buff(prog, "10", 1); //valid Varnum: Num
    assert(Item(prog)==true);
 
-   //how do I know the above valid num isn't a word that's missing its "" i.e. "10" is a valid word
-
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "\"RED\"", 1); //valid Word
@@ -1030,10 +1012,6 @@ void test(void)
    assert(Col(prog)==false);
 
    //Pfix 
-
-   //Note that the grammar seems to allow all sorts of strange instructions and does not even
-   // state that the operator must come after the varnum (i.e. does not ensure postfix)
-   // For now I'm assuming these weird instructions will parse OK but not be interpreted 
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -1363,9 +1341,6 @@ void test(void)
    str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } FORWARD $D RIGHT 90 END", 12); // long expression: colours, forward, right
    assert(over_lst_inslst(prog)==true);
 
-   //when Ins is expanded to include Col etc, retest this function with this string 
-   //str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } COLOUR $C FORWARD $D RIGHT 90 END", 14); // long expression
-
    // HELPER FUNCTIONS 
 
    //word_matches 
@@ -1458,12 +1433,6 @@ void test(void)
    assert(strcmp(prog->wds[prog->cw], "*")==0); //6th word is "*"
    next_word(prog);
    assert(strcmp(prog->wds[prog->cw], ")")==0); //7th word is ")"
-
-   //testing for str2buff and next_word is a bit circular... 
-
-   //get_arg_filename
-
-   //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
 
    //FREE
 

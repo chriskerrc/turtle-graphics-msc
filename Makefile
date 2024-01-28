@@ -121,6 +121,6 @@ run: all
 	./interp_s TTLs/hypno.ttl out_hypno.txt
 	./interp_s TTLs/5x5.ttl out_5x5.txt
 	./interp_s TTLs/downarrow.ttl out_downarrow.txt
-
+	
 clean:
 	rm -f parse_s interp_s parse_v interp_v out_*.txt  

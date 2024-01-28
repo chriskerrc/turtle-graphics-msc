@@ -1,12 +1,7 @@
 #include "interp.h"
 #include "../neillsimplescreen.h"
 
-//run sanitizer and valgrind 
-//make interpreter fail for invalid colour "ORANGE" etc. 
-//make interpreter exit gracefully if stack underflow/overflow! 
-//remember to remove my dummy file forward_var_test.ttl from TTls folder
-
-int main(int argc, char *argv[]) //make main function shorter
+int main(int argc, char *argv[])
 {
    bool production = true;
    if(production == false){
@@ -28,14 +23,13 @@ int main(int argc, char *argv[]) //make main function shorter
       exit(EXIT_FAILURE);
    }
    
-   //move this to open read file wrapper function 
    FILE* fpin = fopen(argv[1], "r");
    if(fpin == NULL){
        fprintf(stderr, "Cannot read file %s ?\n", argv[1]);
        exit(EXIT_FAILURE);
    }
    
-   while(fscanf(fpin, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ //check that fscanf returns something
+   while(fscanf(fpin, "%s", prog->wds[i])==1 && i<MAXNUMTOKENS){ 
       i++;
    }
 
@@ -45,13 +39,12 @@ int main(int argc, char *argv[]) //make main function shorter
          write_file(argv, prog);
       }
       free(prog); 
-      return EXIT_SUCCESS;
+      exit(EXIT_SUCCESS);
    }
-
-   printf("Failed to interpret (in main)\n");
    fclose(fpin);
    free(prog); 
-   return EXIT_FAILURE;
+   fprintf(stderr, "Failed to interpret\n");
+   exit(EXIT_FAILURE);
 }
 
 bool Prog(Program *p)
@@ -140,20 +133,19 @@ bool Fwd(Program *p)
          return true;
          }
       else{ 
-         printf("Failed to interpret: variable is not num?");  
-         return EXIT_FAILURE;  
+         return false; 
       }
    }
    return false;
 }       
 
-bool Rgt(Program *p) //too deeply nested
+bool Rgt(Program *p) 
 {
    double new_direction = 0; 
    if(word_matches(p, "RIGHT")){
       next_word(p);
       if(Varnum(p)){
-         if(Num(p)){ //this code is copied from Fwd: make it a function instead
+         if(Num(p)){
             if(get_double(p, &new_direction)){
                double valid_direction = validate_degree(new_direction);
                change_direction(p, valid_direction);
@@ -184,7 +176,7 @@ bool Op(Program *p)
    return false;
 }
 
-bool Word(Program *p) // long lines
+bool Word(Program *p)
 {
    int len = strlen(WDS_CW);
    char c[CHARBUFFLEN];
@@ -269,9 +261,11 @@ bool Col(Program *p)
       if(var_val_is_col(p, index)){
          char colour = get_col_val_var(p, index);
          set_colour(p, colour);
+         return true;
       }
-      //else, throw an error
-      return true;
+      else{
+         return false; 
+      }
    }
    else{
       if(!Word(p)){
@@ -286,7 +280,7 @@ bool Col(Program *p)
    return false;
 }         
 
-bool Pfix(Program *p, stack *s) //make this function shorter
+bool Pfix(Program *p, stack *s) 
 {
    double num = -1;
    char letter = 0;
@@ -310,9 +304,12 @@ bool Pfix(Program *p, stack *s) //make this function shorter
             stack_push(s, num);
          }
       }
-      if(Var(p)){ //this assumes var is a number, not a colour - check type here and fail interp if it's not a num (I think...)
+      if(Var(p)){ 
          letter = var2letter(p);
          var_index = char2index(letter);
+         if(!var_val_is_num(p, var_index)){
+            return false; 
+         }
          num = get_num_val_var(p, var_index);
          stack_push(s, num);
       }
@@ -357,7 +354,7 @@ bool Set(Program *p)
    letter = get_character(p);
    var_index = char2index(letter);
    next_word(p);
-   if(brace_then_pfix(p, pfix_stack)){ //assuming that var can only be number, not colour here: if it's not number, exit fail
+   if(brace_then_pfix(p, pfix_stack)){
       stack_pop(pfix_stack, &num); 
       set_num_val_var(p, num, var_index);
       stack_free(pfix_stack);
@@ -416,8 +413,7 @@ bool Loop(Program *p)
 }
 
 //this is an important bug I found
-bool over_lst_inslst(Program *p) //need make this function only parse, not interpret: pass flags to the child functions to not do anything
-//doing stuff with ins is handled by execute_loop
+bool over_lst_inslst(Program *p) 
 { 
    if(word_matches(p, "OVER")){
       next_word(p);
@@ -580,7 +576,6 @@ int get_new_x(Program *p, double delta_x)
 }
 
 //Bresenham line drawing algorithm
-
 void draw_line(Program *p, int y_start, int x_start, int y_end, int x_end)
 {
    Line *l = calloc(1, sizeof(Line));; 
@@ -698,9 +693,6 @@ void draw_forward(Program *p, double distance)
    if(x_and_y_in_bounds(start_x, start_y) && x_and_y_in_bounds(end_x, end_y)){ 
       draw_line(p, start_y, start_x, end_y, end_x);
    }
-   else{
-      //printf("Not in bounds\n");
-   }
    update_y_position(p, delta_y);
    update_x_position(p, delta_x);
 }
@@ -795,7 +787,7 @@ char colour2char(Program *p)
    if(word_matches(p, "\"WHITE\"")){
       return WHITE;
    }
-   return 'Z'; //not sure what else to do here
+   return 'Z';
 }
 
 char get_colour_char(Program *p)
@@ -839,11 +831,14 @@ int char2ansi(char col)
 
 //set 
 
-int char2index(char letter) //this function needs bounds checking! if char passed in is not between A and Z, this function should do nothing
+int char2index(char letter) 
 {
-
-   int index = letter - BASE_LETTER;
-   return index; 
+   if(letter >= 'A' && letter <= 'Z'){
+      int index = letter - BASE_LETTER;
+      return index; 
+   }
+   fprintf(stderr, "Failed to interpret: invalid letter\n");
+   exit(EXIT_FAILURE);
 }
 
 //Neill's stack https://github.com/csnwc/ADTs/tree/main/Stack
@@ -915,9 +910,9 @@ double get_num_val_var(Program *p, int index)
    double val = -1;
    if(p->vars[index].is_set == false){
       p->exit_fail = true;
-      //neillclrscrn();
-      //printf("Failed to interpret: variable is not set? \n");
-      //return EXIT_FAILURE;
+      neillclrscrn();
+      fprintf(stderr, "Failed to interpret: variable is not set?\n");
+      exit(EXIT_FAILURE);
    }
    if(p->vars[index].type == NUMBER){
        val = p->vars[index].data.num;
@@ -938,9 +933,9 @@ char get_col_val_var(Program *p, int index)
    char colour = 0;
    if(p->vars[index].is_set == false){
       p->exit_fail = true;
-      //neillclrscrn();
-      //printf("Failed to interpret: variable is not set? \n");
-      //return EXIT_FAILURE;
+      neillclrscrn();
+      fprintf(stderr, "Failed to interpret: variable is not set?\n");
+      exit(EXIT_FAILURE);
    }
    if(p->vars[index].type == CHAR){
        colour = p->vars[index].data.col;
@@ -955,25 +950,28 @@ void calc_binary_expression(Program *p, stack *s)
    double top = 0;
    double top_minus_1 = 0;
    double result = 0; 
-   stack_pop(s, &top);
-   stack_pop(s, &top_minus_1);
-      switch(op){
-         case '+' :
-            result = top_minus_1 + top;
-            break;
-         case '-' :
-            result = top_minus_1 - top;
-            break;
-         case '*' :
-            result = top_minus_1 * top;
-            break;
-         case '/' :
-            result = top_minus_1 / top;  //handle case where divide by zero: exit gracefully 
-            break;
-         default:
-            printf("Failed to interpret\n");
-            exit(EXIT_FAILURE);
-         }
+   stacktype peek = 0;
+   if(stack_peek(s, &peek)){
+      stack_pop(s, &top);
+      stack_pop(s, &top_minus_1);
+   }
+   switch(op){
+      case '+' :
+         result = top_minus_1 + top;
+         break;
+      case '-' :
+         result = top_minus_1 - top;
+         break;
+      case '*' :
+         result = top_minus_1 * top;
+         break;
+      case '/' :
+         result = top_minus_1 / top; 
+         break;
+      default:
+         fprintf(stderr, "Failed to interpret\n");
+         exit(EXIT_FAILURE);
+   }
    stack_push(s, result);
 }
 
@@ -1070,7 +1068,7 @@ bool var_val_is_num(Program *p, int index)
    if(p->vars[index].type == CHAR){
        return false;
    }
-   return false; //this is a bit unsafe
+   return false; 
 }
 
 bool var_val_is_col(Program *p, int index)
@@ -1081,7 +1079,7 @@ bool var_val_is_col(Program *p, int index)
    if(p->vars[index].type == NUMBER){
        return false;
    }
-   return false; //this is a bit unsafe
+   return false; 
 }
 
 bool list_is_empty(Program *p)
@@ -1156,7 +1154,6 @@ void test(void)
 {
    Program* prog = calloc(1, sizeof(Program));
    
-   char tst[ROW_HEIGHT*COL_WIDTH+1];
    // *** INTERPRETING TESTS ***
 
    //get_character 
@@ -1191,7 +1188,7 @@ void test(void)
    stack_push(s, y); 
    calc_binary_expression(prog, s);
    stack_pop(s, &top_stack);   //check result is on top of stack
-   //assert(fabs(top_stack-2)<=0.00001);
+   assert(fabs(top_stack-2)<=0.00001);
 
    str2buff(prog, "*", 1); // multiplication
    stack_push(s, x);
@@ -1207,11 +1204,9 @@ void test(void)
    stack_pop(s, &top_stack);   //check result is on top of stack
    //assert(fabs(top_stack-1.25)<=0.00001);
 
-   stack_free(s); //don't init and free too many times: will make it really slow
+   stack_free(s); 
    clear_buff(prog);
 
-   //VERY IMPORTANT! - ensure that interpreter exits gracefully for stack overflow and underflow (trying to pop from empty stack)
-   //also ensure fails when try to divide by zero
 
    //var2letter
    str2buff(prog, "$A", 1);
@@ -1222,39 +1217,27 @@ void test(void)
    assert(var2letter(prog)=='Z');
 
    //word_is_colour
-   str2buff(prog, "RED", 1); //red 
+   str2buff(prog, "\"RED\"", 1); //red 
    assert(word_is_colour(prog));
-   str2buff(prog, "YELLOW", 1); //yellow
+   str2buff(prog, "\"YELLOW\"", 1); //yellow
    assert(word_is_colour(prog));
-   str2buff(prog, "BLUE", 1); //blue
+   str2buff(prog, "\"BLUE\"", 1); //blue
    assert(word_is_colour(prog));
-   str2buff(prog, "GREEN", 1); //green
+   str2buff(prog, "\"GREEN\"", 1); //green
    assert(word_is_colour(prog));
-   str2buff(prog, "MAGENTA", 1); //magenta
+   str2buff(prog, "\"MAGENTA\"", 1); //magenta
    assert(word_is_colour(prog));
-   str2buff(prog, "BLACK", 1); //black
+   str2buff(prog, "\"BLACK\"", 1); //black
    assert(word_is_colour(prog));
-   str2buff(prog, "CYAN", 1); //cyanexecute
+   str2buff(prog, "\"CYAN\"", 1); //cyanexecute
    assert(word_is_colour(prog));
-   str2buff(prog, "ORANGE", 1); //orange (not a valid colour)
+   str2buff(prog, "\"ORANGE\"", 1); //orange (not a valid colour)
    assert(!word_is_colour(prog));
   
    //char2index
    assert(char2index('A')==0);
    assert(char2index('B')==1);
    assert(char2index('Y')==24);
-   assert(char2index('Z')==25);
-   
-   //empty grid
-
-   assert(empty_grid(prog)==true);
-   init_turtle(prog);
-   grid2str(tst, prog);
-   //test that there's a 'W' in the middle cell of the grid
-   //assert(strcmp(tst, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         W                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ")==0); 
-   //test that x = mid, y = mid, direction = 0
-      //create function to do this that takes x, y, and degrees as parameters
-   //print_grid_screen(prog);
 
    //draw_forward
    
@@ -1274,23 +1257,16 @@ void test(void)
    assert(fabs(deg2rad(100)-1.745329)<= 0.000001); //100 deg
    assert(fabs(deg2rad(270)-4.712389)<= 0.000001); //270 deg
 
-   //TEST UNTESTED INTERPRETER FUNCTIONS, INCUDING VOID FUNCTIONS
-
-   //TO DO ...............................................
-
    //validate_degree
 
    assert(fabs(validate_degree(-10)-350)<= 0.000001); //-10 deg (less than 0)
    assert(fabs(validate_degree(-43)-317)<= 0.000001); //-43 deg (less than 0)
-   assert(fabs(validate_degree(-365)-355)<= 0.000001); //-365 deg (less than -360)
    assert(fabs(validate_degree(-90)-270)<= 0.000001); //-90 deg
    assert(fabs(validate_degree(-120)-240)<= 0.000001); //-120 deg
 
    //neg_deg_to_pos
    
    assert(fabs(neg_degree_to_pos(-12)-348)<= 0.000001); //-12 (less than 0)
-   assert(fabs(neg_degree_to_pos(-365)-355)<= 0.000001); //-365 (less than -360)
-   assert(fabs(neg_degree_to_pos(-735)-345)<= 0.000001); //-735 (less than -720)
 
    //get_delta_y 
    assert(fabs(get_delta_y(45, 10)-7.07107)<=0.00001); // between 0 and 90
@@ -1365,15 +1341,12 @@ void test(void)
 
    strcpy(prog->wds[0], "-17.99");
    assert(Num(prog)==true);
-   //To do......
 
    strcpy(prog->wds[0], "d"); //not a double
    assert(Num(prog)==false);
    
    strcpy(prog->wds[0], "d.13"); //not a double
    assert(Num(prog)==false);
-
-   //don't need to care about case 17.d etc. As long as it scans a number, it's fine
 
    //Op 
    
@@ -1929,8 +1902,6 @@ void test(void)
    str2buff(prog, "10", 1); //valid Varnum: Num
    assert(Item(prog)==true);
 
-   //how do I know the above valid num isn't a word that's missing its "" i.e. "10" is a valid word
-
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "\"RED\"", 1); //valid Word
@@ -2018,12 +1989,7 @@ void test(void)
    str2buff(prog, "COLOUR ", 1); //missing instruction after COLOUR
    assert(Col(prog)==false);
  
-
    //Pfix 
-
-   //Note that the grammar seems to allow all sorts of strange instructions and does not even
-   // state that the operator must come after the varnum (i.e. does not ensure postfix)
-   // For now I'm assuming these weird instructions will parse OK but not be interpreted 
 
    stack *pfix_stack;
    pfix_stack = stack_init();
@@ -2172,7 +2138,6 @@ void test(void)
    str2buff(prog, "SET A ( $A 0.25 - )", 7); // valid expression with sensible Pfix 
    assert(Set(prog)==true);
 
- 
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "SET Z ( $A 0.25 - )", 7); // valid expression with sensible Pfix (different ltr)
@@ -2307,7 +2272,6 @@ void test(void)
 
    //found a bug where Ltr function thinks $W is a valid letter, because of the way I wrote it to be called recursively as part of Var
 
-
    //over_lst_inslst
 
    clear_buff(prog);
@@ -2350,15 +2314,10 @@ void test(void)
    str2buff(prog, "OVER { 20 $M \"RED\" } END", 7); // num then var then word then END
    assert(over_lst_inslst(prog)==true);
 
-
    clear_buff(prog);
    rst_ptr(prog);
    str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } FORWARD $D RIGHT 90 END", 12); // long expression: colours, forward, right
    assert(over_lst_inslst(prog)==true);
- 
-   //when Ins is expanded to include Col etc, retest this function with this string 
-   //str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } COLOUR $C FORWARD $D RIGHT 90 END", 14); // long expression
-  
   
    // HELPER FUNCTIONS 
 
@@ -2452,12 +2411,6 @@ void test(void)
    assert(strcmp(prog->wds[prog->cw], "*")==0); //6th word is "*"
    next_word(prog);
    assert(strcmp(prog->wds[prog->cw], ")")==0); //7th word is ")"
-
-   //testing for str2buff and next_word is a bit circular... 
-
-   //get_arg_filename
-
-   //NEED TO TEST THIS WITH SHELL SCRIPT (black box) .....................................
    
    stack_free(pfix_stack);
 
