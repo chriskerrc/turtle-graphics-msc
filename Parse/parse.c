@@ -120,7 +120,8 @@ bool Op(Program *p)
    return false;
 }
 
-bool Word(Program *p) //this function accepts any word scanned by sscanf with " " round it, and doesn't enforce capital letters
+//this function accepts any word scanned by sscanf with " " round it, and doesn't enforce capital letters
+bool Word(Program *p) 
 {
    int len = strlen(WDS_CW);
    char c[CHARBUFFLEN];
@@ -193,7 +194,8 @@ bool Item(Program *p)
    return false;
 }
 
-bool Col(Program *p) //this function doesn't enforce that colours are from the correct list of colours
+//this function doesn't enforce that colours are from the correct list of colours
+bool Col(Program *p) 
 {   
    if(word_matches(p, "COLOUR")){
       next_word(p);
@@ -209,7 +211,8 @@ bool Col(Program *p) //this function doesn't enforce that colours are from the c
    return false;
 }
 
-bool Pfix(Program *p) //this function doesn't enforce a correct postfix i.e. "SET C ( + + + )" is valid
+//this function doesn't enforce a correct postfix i.e. "SET C ( + + + )" is valid
+bool Pfix(Program *p) 
 {
    if(word_matches(p, ")")){
       return true;
@@ -378,7 +381,6 @@ void test(void)
 
    strcpy(prog->wds[0], "-17.99");
    assert(Num(prog)==true);
-   //To do......
 
    strcpy(prog->wds[0], "d"); //not a double
    assert(Num(prog)==false);
@@ -496,9 +498,6 @@ void test(void)
 
    strcpy(prog->wds[0], "\"\""); //null string with ""
    assert(Word(prog)==false);
-   // this is a bug I found through assert testing: previously input "\"\"" returned true
-
-   //found significant bug where "\"RED" evaluates to true i.e. missing second "
 
    //RECURSIVE FUNCTIONS
 
@@ -873,7 +872,6 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "$$", 1); //first & 2nd chars are $
    assert(Var(prog)==false);
-   //found bug where this was valid. I had "$%[$A-Z]" instead of "$%[A-Z]"
 
    clear_buff(prog);
    rst_ptr(prog);
@@ -1291,8 +1289,6 @@ void test(void)
    rst_ptr(prog);
    str2buff(prog, "LOOP $W OVER { \"GREEN\" } END", 7); // var instead of Ltr
    assert(Loop(prog)==false);
-
-   //found a bug where Ltr function thinks $W is a valid letter, because of the way I wrote it to be called recursively as part of Var
 
    //over_lst_inslst
 

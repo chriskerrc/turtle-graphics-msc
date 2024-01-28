@@ -1,0 +1,43 @@
+#Testing 
+
+##Process
+
+I have exclusively used assert testing. 
+
+### Parser
+
+For the parser, I created a str2buff function, which let me use a string to feed words from the .ttl grammar into the program buffer for testing. I wrote roughly 900 lines of assert testing for the parser. I tested as I wrote each new function. 
+
+I found that some functions were too complex to test as a whole, so I broke them up into sub-functions. For example, instead of having a single Loop function to handle parsing the Loop grammar, I have a main Loop function that handles everything before the word "OVER". Then I call a second over_lst_inslst function from the Loop function, to handle the rest of the loop syntax. I found this meant my testing could be more granular, and I could break my test strings down into smaller chunks. 
+
+I started by testing the terminal functions, like Word and Num, at the "bottom of the tree" and worked my way up, finally testing Prog. This meant I could catch any bugs at the lowest level, before they propagated through the recursive structure. 
+
+For the parser, all my assert testing is functional in the submitted file. 
+
+### Interpreter 
+
+I started off assert testing my interpreter functions as I went. Unfortunately, I ran out of time to test much of my Interpreter, which leaves a gap in my testing. 
+
+I found that the assert testing I did for the parser was leading to lots of lines being drawn to the screen, so I wrapped my testing for the interpreter in a boolean flag ("production") at the top of main. This flag is switched off for the production version. 
+
+##Lessons learned 
+
+I've learned that I need to become faster at coding, to ensure that I have time to test as I go. I've also learned that assert testing is not sufficient for a recursive program of this nature. If I was doing this assignement again, I would get to grips with writing a shell script earlier on, so I could do some black box testing. It is also not possible to test argv[1] and argv[2] etc command line arguments via assert testing. 
+
+##Bugs found
+
+###Parser
+
+Fixed the following bugs, identified through assert testing: 
+
+- Word function was returning true when the input was "\"\"" i.e. two double quotation marks with nothing between them
+- Word function was returning true when the input was "\"RED" (missing second ")
+- Var was returning true for input "$$". I had used "$%[$A-Z]" instead of "$%[A-Z]"
+- Ltr function thought $W was a valid letter, because of the way I wrote it to be called recursively as part of Var
+
+###Interpreter
+
+Fixed the following bugs: 
+- Found a bug where I was calling wrong function get_character, instead of var2letter, which was causing $ char to be passed to the char2index function, which in turn was producing an index of -29. This caused my array of alphabet letters (for variables) to go out of bounds. I added some bounds checking on char2index to prevent this. 
+- I was stumped for a while by a bug where the outputs of downarrow.ttl and tunnel.ttl were rotated 90 degrees. I stripped as much as I could out of the downarrow.ttl file, to try to isolate what was causing it (see downarrow_alt.cut in the /Testing folder). I worked out that there was some duplication in my loop functionality, where Inslst was being called before the loop was actually executed, so there was effectively a ghost line and direction that was ofsetting the output for downarrow.ttl and tunnel.ttl. 
+
