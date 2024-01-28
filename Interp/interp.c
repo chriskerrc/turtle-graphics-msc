@@ -952,7 +952,9 @@ char get_col_val_var(Program *p, int index)
 void calc_binary_expression(Program *p, stack *s)
 {
    char op = get_character(p);
-   double top, top_minus_1, result; 
+   double top = 0;
+   double top_minus_1 = 0;
+   double result = 0; 
    stack_pop(s, &top);
    stack_pop(s, &top_minus_1);
       switch(op){

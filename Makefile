@@ -6,7 +6,13 @@ VALGRIND= $(COMMON) $(DEBUG)
 PRODUCTION= $(COMMON) -O3
 VALGRINDFLGS= valgrind --leak-check=full
 
-all: parse_s interp_s parse_v interp_v
+all: parse interp parse_s interp_s parse_v interp_v valgrind
+
+parse: Parse/parse.h Parse/parse.c
+	$(CC) Parse/parse.c -o parse -I./Parse $(PRODUCTION) -lm
+
+interp: Interp/interp.h Interp/interp.c Interp/neills_general.c neillsimplescreen.c neillsimplescreen.h
+	$(CC) neillsimplescreen.c Interp/interp.c Interp/neills_general.c -o interp -I./Interp $(PRODUCTION) -lm
 
 parse_s: Parse/parse.h Parse/parse.c
 	$(CC) Parse/parse.c -o parse_s -I./Parse $(SANITIZE) -lm
@@ -55,6 +61,21 @@ valgrind: parse_v interp_v
 	$(VALGRINDFLGS) ./interp_v TTLs/downarrow.ttl out_downarrow.txt
 
 run: all
+	./parse TTLs/empty.ttl
+	./parse TTLs/forward.ttl
+	./parse TTLs/ok_parse_fail_interp.ttl
+	./parse TTLs/set1.ttl
+	./parse TTLs/donothing.ttl
+	./parse TTLs/set2.ttl
+	./parse TTLs/turn.ttl
+	./parse TTLs/spiral.ttl
+	./parse TTLs/octagon1.ttl
+	./parse TTLs/octagon2.ttl
+	./parse TTLs/tunnel.ttl
+	./parse TTLs/labyrinth.ttl
+	./parse TTLs/hypno.ttl
+	./parse TTLs/5x5.ttl
+	./parse TTLs/downarrow.ttl
 	./parse_s TTLs/empty.ttl
 	./parse_s TTLs/forward.ttl
 	./parse_s TTLs/ok_parse_fail_interp.ttl
@@ -70,6 +91,21 @@ run: all
 	./parse_s TTLs/hypno.ttl
 	./parse_s TTLs/5x5.ttl
 	./parse_s TTLs/downarrow.ttl
+	./interp TTLs/empty.ttl out_empty.txt
+	./interp TTLs/forward.ttl out_forward.txt
+	./interp TTLs/set1.ttl out_set1.txt
+	./interp TTLs/donothing.ttl out_donothing.txt
+	./interp TTLs/fail_parse_ok_interp.ttl out_fail_parse_ok_interp.txt
+	./interp TTLs/set2.ttl out_set2.txt
+	./interp TTLs/turn.ttl out_turn.txt
+	./interp TTLs/spiral.ttl out_spiral.txt
+	./interp TTLs/octagon1.ttl out_octagon1.txt
+	./interp TTLs/octagon2.ttl out_octagon2.txt
+	./interp TTLs/tunnel.ttl out_tunnel.txt
+	./interp TTLs/labyrinth.ttl out_labyrinth.txt
+	./interp TTLs/hypno.ttl out_hypno.txt
+	./interp TTLs/5x5.ttl out_5x5.txt
+	./interp TTLs/downarrow.ttl out_downarrow.txt
 	./interp_s TTLs/empty.ttl out_empty.txt
 	./interp_s TTLs/forward.ttl out_forward.txt
 	./interp_s TTLs/set1.ttl out_set1.txt
