@@ -213,7 +213,7 @@ void run_loop(Program *p, int itm_indx_1, int itm_indx_end, int vr_indx, int jmp
 bool get_double(Program *p, double *result);
 void run_simple_screen(Program *p);
 bool x_and_y_in_bounds(double x, double y);
-
+bool list_is_empty(Program *p);
 
 //Test function
 void test(void);

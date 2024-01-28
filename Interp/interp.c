@@ -402,6 +402,9 @@ bool Loop(Program *p)
    int first_item_index = get_first_item_index(p);
    int last_item_index = get_last_item_index(p);
    int loop_jump = get_loop_jump(first_item_index, last_item_index);
+   if(list_is_empty(p)){
+      return true;
+   }
    if(over_lst_inslst(p)){
       run_loop(p, first_item_index, last_item_index, loop_var_index, loop_jump);
       return true;
@@ -1074,6 +1077,25 @@ bool var_val_is_col(Program *p, int index)
        return false;
    }
    return false; //this is a bit unsafe
+}
+
+bool list_is_empty(Program *p)
+{
+   int baseline = p->cw;
+   next_word(p);
+   if(!word_matches(p, "{")){
+      p->cw = baseline; 
+      return false;
+   }
+   next_word(p);
+   if(!word_matches(p, "}")){
+      p->cw = baseline; 
+      return false;
+   }
+   while(!word_matches(p, "END")){
+      p->cw++;
+   }
+   return true;
 }
 
 //HELPER FUNCTIONS
