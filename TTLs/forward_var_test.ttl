@@ -1,4 +1,0 @@
-START
-  SET A ( 12 )
-  FORWARD $A
-END

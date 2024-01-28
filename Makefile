@@ -123,4 +123,4 @@ run: all
 	./interp_s TTLs/downarrow.ttl out_downarrow.txt
 	
 clean:
-	rm -f parse_s interp_s parse_v interp_v out_*.txt  
+	rm -f parse interp parse_s interp_s parse_v interp_v out_*.txt  

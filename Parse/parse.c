@@ -43,7 +43,6 @@ bool Prog(Program *p)
       return true;   
    }
    return false;
-   
 }
 
 bool Inslst(Program *p)

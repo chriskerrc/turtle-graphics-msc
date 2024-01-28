@@ -64,12 +64,8 @@ bool stack_pop(stack* s, stacktype* d);
 /* Clears all space used */
 bool stack_free(stack* s);
 
-/* Optional? */
-
 /* Copy top element into d (but don't pop it) */
 bool stack_peek(stack*s,  stacktype* d);
-/* Make a string version - keep .dot in mind */
-void stack_tostring(stack*, char* str);
 
 //Neill's stack (general.h)
 void on_error(const char* s);
@@ -135,7 +131,6 @@ struct line{
 typedef struct line Line; 
 
 char str[ROW_HEIGHT*COL_WIDTH+1];
-
 
 //Parser grammar functions
 bool Prog(Program *p); 
