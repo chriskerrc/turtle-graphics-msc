@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-   bool production = false;
+   bool production = true;
    if(production == false){
       test();
    }
@@ -930,10 +930,12 @@ void calc_binary_expression(Program *p, stack *s)
    double top_minus_1 = 0;
    double result = 0; 
    stacktype peek = 0;
-   if(stack_peek(s, &peek)){
-      stack_pop(s, &top);
-      stack_pop(s, &top_minus_1);
+   if(!stack_peek(s, &peek)){
+      fprintf(stderr, "Failed to interpret\n");
+      exit(EXIT_FAILURE);
    }
+   stack_pop(s, &top);
+   stack_pop(s, &top_minus_1);   
    switch(op){
       case '+' :
          result = top_minus_1 + top;
@@ -1474,6 +1476,463 @@ void test(void)
    draw_line(prog, 20, 20, 15, 35); //gentle line
    assert(prog->grid[20][20] == 'W'); //start steep line
    assert(prog->grid[15][35] == 'W'); //end steep line
+
+   //PARSER FUNCTIONS UNCHANGED IN INTERPRETER 
+
+   //Num
+   strcpy(prog->wds[0], "10");
+   assert(Num(prog)==true);
+
+   strcpy(prog->wds[0], "-17.99");
+   assert(Num(prog)==true);
+
+   strcpy(prog->wds[0], "d"); //not a double
+   assert(Num(prog)==false);
+   
+   strcpy(prog->wds[0], "d.13"); //not a double
+   assert(Num(prog)==false);
+
+   //Op 
+   
+   strcpy(prog->wds[0], "+");
+   assert(Op(prog)==true);
+
+   strcpy(prog->wds[0], "-");
+   assert(Op(prog)==true);
+
+   strcpy(prog->wds[0], "/");
+   assert(Op(prog)==true);
+
+   strcpy(prog->wds[0], "*");
+   assert(Op(prog)==true);
+  
+   strcpy(prog->wds[0], "?"); //non-valid punct
+   assert(Op(prog)==false);
+   
+   strcpy(prog->wds[0], "a"); //letter
+   assert(Op(prog)==false);
+
+   strcpy(prog->wds[0], "1"); //number
+   assert(Op(prog)==false);
+
+   //Ltr
+   
+   strcpy(prog->wds[0], "A");
+   assert(Ltr(prog, NO_VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "M");
+   assert(Ltr(prog, NO_VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "Z");
+   assert(Ltr(prog, NO_VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "a"); //lowercase
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "1"); //number
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "!"); //punct 
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+   
+   strcpy(prog->wds[0], "AA"); //double capital letter 
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "A!"); //cap letter then punct
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "Ab"); //cap letter then lowercase
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "A1"); //cap letter then number
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "1A"); //num then cap
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "$A"); //valid var: as if called from Var
+   assert(Ltr(prog, VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "$A"); //valid var: as if not called from Var
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "$M"); //valid var: as if called from Var
+   assert(Ltr(prog, VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "$M"); //valid var: as if not called from Var
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   strcpy(prog->wds[0], "$Z"); //valid var: as if called from Var
+   assert(Ltr(prog, VAR_CALL)==true);
+
+   strcpy(prog->wds[0], "$Z"); //valid var: as if not called from Var
+   assert(Ltr(prog, NO_VAR_CALL)==false);
+
+   //Word
+
+   strcpy(prog->wds[0], "\"RED\""); //colour with ""
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "RED\""); //colour missing first "
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"RED"); //colour missing second "
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "RED"); //colour without ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"BLUE\""); 
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "\"HELLO!\""); //other word (not interpretable)
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "HELLO!"); //other word without ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"178\""); //word that's a number
+   assert(Word(prog)==true);
+
+   strcpy(prog->wds[0], "178"); //word that's a number without ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], ""); //null string, no ""
+   assert(Word(prog)==false);
+
+   strcpy(prog->wds[0], "\"\""); //null string with ""
+   assert(Word(prog)==false);
+
+   //RECURSIVE FUNCTIONS
+
+   //Prog
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 10 END", 4); 
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 17.99 END", 4); 
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START RIGHT 10 END", 4); //RIGHT
+   assert(Prog(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD TEN END", 4); // TEN instead of 10
+   assert(Prog(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORARD 10 END", 4); //mispelled FORWARD
+   assert(Prog(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START FORWARD 10", 3); //no END statement
+   assert(Prog(prog)==false);
+
+   
+   //Inslst
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "END", 1); // END
+   assert(Inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "EN", 1); // mispelled END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "START", 1); // not END or Ins 
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD 10 END", 3); // correct Ins (Fwd) + END
+   assert(Inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT -35 END", 3); // correct Ins (Rgt) + END
+   assert(Inslst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT -35", 2); // correct Ins (Rgt) with no END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD 6", 2); // correct Ins (Fwd) with no END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FRWARD 6 END", 3); // mispelled FORWARD with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RGHT 7 END", 3); // mispelled RIGHT with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT d END", 3); // Rgt (not a double) with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RIGHT END", 2); // Rgt (missing double) with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD x END", 3); // Fwd (not a double) with END
+   assert(Inslst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "FORWARD END", 2); // Fwd (missing double) with END
+   assert(Inslst(prog)==false);
+
+   //Var 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); //first char is $
+   assert(Var(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$M", 1); //first char is $
+   assert(Var(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$Z", 1); //first char is $
+   assert(Var(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$!", 1); //first char is $, 2nd is punct
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "!A", 1); //first char is not $
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$$", 1); //first & 2nd chars are $
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "M", 1); //letter, not var
+   assert(Var(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "S", 1); //letter, not var
+   assert(Var(prog)==false);
+
+   //Varnum 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); //valid Var
+   assert(Varnum(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$a", 1); //invalid Var
+   assert(Varnum(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "-17.99", 1); //valid Num
+   assert(Varnum(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10", 1); //valid Num
+   assert(Varnum(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "A", 1); //invalid Num
+   assert(Varnum(prog)==false);
+
+   //Item 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); //valid Varnum: Var
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10", 1); //valid Varnum: Num
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "\"RED\"", 1); //valid Word
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "\"GREEN\"", 1); //valid Word
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "\"178\"", 1); //valid Word (number)
+   assert(Item(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "GREEN", 1); //invalid Word (no "")
+   assert(Item(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "", 1); //invalid Word: null string
+   assert(Item(prog)==false);
+
+   //Items
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "}", 1); // } only
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, ")", 1); // } wrong closing bracket only
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A }", 2); // var then } 
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 }", 2); // num then } 
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "\"RED\" }", 2); // word then } 
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "RED }", 2); // word no "" then } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A", 1); // var no } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "-17.99", 1); // num no } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "\"RED\"", 1); // word no } 
+   assert(Items(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A 17 }", 3); // multiple varnum then }
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 $M }", 3); // multiple varnum then }
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 $M \"RED\" \"BLACK\" }", 5); // multiple varnum and word then }
+   assert(Items(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "10 $M RED \"BLACK\" }", 5); // multiple varnum and word then } (one word missing "")
+   assert(Items(prog)==false);
+
+   //Lst 
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ $A }", 3); // valid Lst: one var 
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ $A $M }", 4); // valid Lst: two vars 
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ $A -17.99 }", 4); // valid Lst: one var one num
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ \"RED\" }", 3); // valid Lst: one word
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ RED }", 3); // invalid Lst: word missing ""
+   assert(Lst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ \"BLACK\" \"RED\" }", 4); // valid Lst: two words
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ \"BLACK\" $Q }", 4); // valid Lst: one word one var
+   assert(Lst(prog)==true);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ 10 \"GREEN\" }", 4); // valid Lst: one num one word
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "$A }", 2); // invalid: missing { 
+   assert(Lst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "( $A }", 3); // invalid: wrong opening bracket
+   assert(Lst(prog)==false);
+
+   clear_buff(prog);
+   rst_ptr(prog);
+   str2buff(prog, "{ 10 \"GREEN\"", 3); // invalid Items: missing }
+   assert(Lst(prog)==false);
 
    free(prog);
    
