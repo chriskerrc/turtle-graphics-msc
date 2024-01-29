@@ -156,15 +156,14 @@ bool over_lst_inslst(Program *p);
 
 //parser helper functions
 void clear_buff(Program *p);
-void str2buff(Program *p, char* tst, int num_wds);
+void str2buff(Program *p, char tst[TSTSTRLEN], int num_wds);
 void rst_ptr(Program *p);
 void next_word(Program *p); 
 bool word_matches(Program *p, char match[MAXTOKENSIZE]);
 
 //Interpreter functions 
-bool empty_area(Program *p);
+bool empty_grid(Program *p);
 void init_turtle(Program *p);
-void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p);
 void print_grid_screen(Program *p);
 void write_file(char *argv[], Program *p);
 void output_file(FILE* fpout, Program *p);
@@ -189,7 +188,6 @@ bool word_is_colour(Program *p);
 void set_colour(Program *p, char col);
 char colour2char(Program *p);
 char get_colour_char(Program *p);
-const char* get_colour_str(Program *p);
 int char2ansi(char col);
 int char2index(char letter);
 void calc_binary_expression(Program *p, stack *s);

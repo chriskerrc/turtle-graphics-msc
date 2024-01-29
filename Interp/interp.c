@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-   bool production = true;
+   bool production = false;
    if(production == false){
       test();
    }
@@ -470,23 +470,6 @@ void print_grid_screen(Program *p)
    }
    printf("\n");
    neillreset();
-}
-
-void grid2str(char str[ROW_HEIGHT*COL_WIDTH+1], Program *p)
-{
-   int str_index = 0; 
-   for(int row = 0; row < ROW_HEIGHT; row++){   
-      for(int col = 0; col < COL_WIDTH; col++){ 
-         if(isalpha(p->grid[row][col])){
-            str[str_index] = p->grid[(str_index-col)/COL_WIDTH][str_index - row * COL_WIDTH]; 
-            str_index++;
-         }
-         else{
-            str[str_index] = SPACE;
-            str_index++;
-         }
-      }
-   }
 }
 
 //Direction
@@ -1286,6 +1269,24 @@ void test(void)
    prog->curr_x = 9;
    assert(get_new_x(prog, 5)==14);
 
+   //update_x_position
+   prog->curr_x = 2;
+   update_x_position(prog, 7);
+   assert(fabs(prog->curr_x-9)<=0.00001);
+
+   prog->curr_x = 10;
+   update_x_position(prog, -3);
+   assert(fabs(prog->curr_x-7)<=0.00001);
+
+   //update_y_position
+   prog->curr_y = 4;
+   update_y_position(prog, 2);
+   assert(fabs(prog->curr_y-6)<=0.00001);
+   
+   prog->curr_y = 8;
+   update_y_position(prog, -2);
+   assert(fabs(prog->curr_y-6)<=0.00001);
+
    //is_y_in_bounds
    assert(is_y_in_bounds(4)); //in bounds
    assert(!is_y_in_bounds(33)); //over bounds
@@ -1295,6 +1296,10 @@ void test(void)
    assert(is_y_in_bounds(7)); //in bounds
    assert(!is_y_in_bounds(51)); //over bounds
    assert(!is_y_in_bounds(-1)); //below bounds
+
+   //x_and_y_in_bounds
+   assert(x_and_y_in_bounds(7, 4)); //in bounds
+   assert(!x_and_y_in_bounds(51, -1)); //out bounds
 
    //set_num_val_var & get_num_val_var
 
@@ -1324,6 +1329,151 @@ void test(void)
    assert(fabs(get_num_val_var(prog, 2)-2)<=0.00001); //check C is set to 2 (= 1 * 2)
    rst_ptr(prog);
    clear_buff(prog);
+
+   //char2ansi
+   assert(char2ansi('R')==red);
+   assert(char2ansi('B')==blue);
+   assert(char2ansi('Y')==yellow);
+   assert(char2ansi('M')==magenta);
+   assert(char2ansi('K')==black);
+   assert(char2ansi('G')==green);
+   assert(char2ansi('W')==white);
+
+   //char2index
+   assert(char2index('A')==0);
+   assert(char2index('C')==2);
+   assert(char2index('Z')==25);
+   
+   //char colour2char, set_col_val_var, get_col_val_var, var_val_is_num, var_val_is_col
+
+   clear_buff(prog);
+   str2buff(prog, "\"RED\"", 1); 
+   assert(colour2char(prog)=='R');
+   assert(!var_is_set(prog, 3)); //check 'D' is not set
+   set_col_val_var(prog, 3); //set 'D' val
+   assert(get_col_val_var(prog, 3)=='R');
+   assert(var_is_set(prog, 3)); //check 'D' is set
+   assert(!var_val_is_num(prog, 3)); // D is not a num
+   assert(var_val_is_col(prog, 3)); // D is a colour
+   clear_buff(prog);
+
+   str2buff(prog, "\"YELLOW\"", 1); 
+   assert(colour2char(prog)=='Y');
+   assert(!var_is_set(prog, 4)); //check 'E' is not set
+   set_col_val_var(prog, 4); //set 'E' val
+   assert(get_col_val_var(prog, 4)=='Y');
+   assert(var_is_set(prog, 4)); //check 'D' is set
+   assert(!var_val_is_num(prog, 4)); // E is not a num
+   assert(var_val_is_col(prog, 4)); // E is a colour
+   clear_buff(prog);
+
+   str2buff(prog, "\"BLACK\"", 1); 
+   assert(colour2char(prog)=='K');
+   assert(!var_is_set(prog, 5)); //check 'F' is not set
+   set_col_val_var(prog, 5); //set 'E' val
+   assert(get_col_val_var(prog, 5)=='K');
+   assert(var_is_set(prog, 5)); //check 'F' is set
+   assert(!var_val_is_num(prog, 5)); // F is not a num
+   assert(var_val_is_col(prog, 5)); // F is a colour
+   clear_buff(prog);
+   
+   //set_colour_char & get_colour_char
+ 
+   set_colour(prog, 'R');
+   assert(get_colour_char(prog)=='R');
+   set_colour(prog, 'K');
+   assert(get_colour_char(prog)=='K');
+   set_colour(prog, 'G');
+   assert(get_colour_char(prog)=='G');
+   set_colour(prog, 'B');
+   assert(get_colour_char(prog)=='B');
+   set_colour(prog, 'K');
+   assert(get_colour_char(prog)=='K');
+
+   //set_num_val_var, get_num_val_var, var_is_set, var_val_is_num
+   
+   assert(!var_is_set(prog, 16)); //check 'Q' is not set
+   set_num_val_var(prog, 20, 16); //set 'Q' val
+   assert(fabs(get_num_val_var(prog, 16)-20)<=0.00001); //get 'Q' val
+   assert(var_is_set(prog, 16)); //check 'Q' is now set
+   assert(var_val_is_num(prog, 16)); //check 'Q' is num
+
+   assert(!var_is_set(prog, 24)); //check 'Y' is not set
+   set_num_val_var(prog, 12, 24); //set 'Y' val
+   assert(fabs(get_num_val_var(prog, 24)-12)<=0.00001); //get 'Q' val
+   assert(var_is_set(prog, 24)); //check 'Y' is now set
+   assert(var_val_is_num(prog, 24)); //check 'Y' is num
+
+   //get_last_item_index, get_first_item_index, get_loop_jump
+   clear_buff(prog);
+   str2buff(prog, "OVER { \"RED\" \"GREEN\" \"YELLOW\" \"BLUE\" } COLOUR $C FORWARD 5 RIGHT 90 END", 14); 
+   assert(get_last_item_index(prog)==5);
+   assert(get_first_item_index(prog)==2);
+   assert(get_loop_jump(2, 5)==5);
+   rst_ptr(prog);
+   clear_buff(prog);
+
+   str2buff(prog, "OVER { 1 2 3 4 5 6 7 8 9 } COLOUR $C FORWARD 5 RIGHT 90 END", 18); 
+   assert(get_last_item_index(prog)==10);
+   assert(get_first_item_index(prog)==2);
+   assert(get_loop_jump(2, 10)==10);
+   rst_ptr(prog);
+   clear_buff(prog);
+
+   //list_is_empty
+   str2buff(prog, "OVER { } COLOUR $C FORWARD 5 RIGHT 90 END", 10); //empty list
+   assert(list_is_empty(prog));
+   rst_ptr(prog);
+   clear_buff(prog);
+
+   str2buff(prog, "OVER { 1 } COLOUR $C FORWARD 5 RIGHT 90 END", 11); //not empty list
+   assert(!list_is_empty(prog));
+   rst_ptr(prog);
+   clear_buff(prog);
+
+   //get_double 
+
+   double num = 0; 
+   str2buff(prog, "4", 1); 
+   assert(get_double(prog, &num));
+   assert(fabs(num-4)<=0.00001);
+
+   str2buff(prog, "12", 1); 
+   assert(get_double(prog, &num));
+   assert(fabs(num-12)<=0.00001);
+
+   //init_turtle
+
+   init_turtle(prog);
+   assert(fabs(prog->curr_y-16)<=0.00001);
+   assert(fabs(prog->curr_x-25)<=0.00001);
+   assert(fabs(prog->curr_direction+90)<=0.00001);
+   assert(get_colour_char(prog)=='W');
+
+   //change_direction 
+   change_direction(prog, 120);
+   assert(fabs(prog->curr_direction-30)<=0.00001);
+   change_direction(prog, 10);
+   assert(fabs(prog->curr_direction-40)<=0.00001);
+   change_direction(prog, 20);
+   assert(fabs(prog->curr_direction-60)<=0.00001);
+   change_direction(prog, -5);
+   assert(fabs(prog->curr_direction-55)<=0.00001);
+
+   //empty_grid
+   assert(empty_grid(prog)); //grid is empty  
+   plot_pixel(prog, 5, 6); 
+   assert(!empty_grid(prog)); //grid is not empty  
+
+   //draw line, draw_gentle_line, draw_steep_line
+   set_colour(prog, 'W');
+   draw_line(prog, 20, 10, 3, 14); //steep line
+   assert(prog->grid[20][10] == 'W'); //start steep line
+   assert(prog->grid[3][14] == 'W'); //end steep line
+  
+   draw_line(prog, 20, 20, 15, 35); //gentle line
+   assert(prog->grid[20][20] == 'W'); //start steep line
+   assert(prog->grid[15][35] == 'W'); //end steep line
 
    free(prog);
    
