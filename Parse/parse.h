@@ -45,7 +45,7 @@ bool over_lst_inslst(Program *p);
 bool get_arg_filename(int argc, char *argv[], char* filename);
 void clear_buff(Program *p);
 void str2buff(Program *p, char* tst, int num_wds);
-void rst_pt(Program *p);
+void rst_ptr(Program *p);
 void next_word(Program *p); 
 bool word_matches(Program *p, char match[MAXTOKENSIZE]);
 void test(void);
