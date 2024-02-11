@@ -1,6 +1,8 @@
 #include "interp.h"
 #include "../neillsimplescreen.h"
 
+//move Neill's stack to a separate file (treat it as ADT): feedback
+
 int main(int argc, char *argv[])
 {
    bool production = true;
