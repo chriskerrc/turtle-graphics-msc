@@ -1,0 +1,5 @@
+START
+  LOOP C OVER { 1 }
+    FORWARD 5
+    RIGHT 90
+END

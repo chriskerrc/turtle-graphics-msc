@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "specific.h": "c",
+        "complex": "c",
+        "iterator": "c"
+    }
+}
