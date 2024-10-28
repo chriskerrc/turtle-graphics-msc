@@ -1,5 +1,0 @@
-START
-  LOOP C OVER { "PURPLE" }
-    FORWARD 5
-    RIGHT 90
-END

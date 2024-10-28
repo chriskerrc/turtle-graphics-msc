@@ -1,3 +1,0 @@
-START
-   SET A ( 1 )
-END
